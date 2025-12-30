@@ -77,7 +77,11 @@
         /* Use a semi-transparent color directly in the gradient instead of opacity on the div */
         background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
         background-size: 24px 24px;
-        /* opacity: 0.1;  <-- REMOVED THIS LINE, IT WAS CAUSING TEXT FADE */
+      }
+
+      /* Hide texture when custom background is active to avoid visual clutter/obscuring */
+      .has-custom-bg .bg-texture {
+        background-image: none !important;
       }
 
       ::-webkit-scrollbar {

@@ -388,7 +388,7 @@ export default function App() {
 
   return (
     <div 
-        className="flex h-screen w-full font-sans overflow-hidden" 
+        className={`flex h-screen w-full font-sans overflow-hidden ${settings.globalBackgroundImageUrl ? 'has-custom-bg' : ''}`} 
         style={{ 
             backgroundColor: 'var(--color-bg)', 
             color: 'var(--color-text)',

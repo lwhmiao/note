@@ -347,8 +347,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         backgroundSize: 'cover',
         backgroundPosition: 'center'
     }}>
-      {settings.chatBackgroundImageUrl && <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-0 pointer-events-none" />}
-
+      
       {/* Header */}
       <div className="relative z-10 p-3 border-b border-notion-border flex justify-between items-center bg-white/90 backdrop-blur-md">
         <div className="flex items-center gap-3">
@@ -358,9 +357,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                  <span className="font-display font-bold text-lg text-notion-accentText animate-pulse">对方正在输入...</span>
              ) : (
                  <span className="font-display font-bold text-lg text-notion-text">{settings.aiName}</span>
-             )}
-             {!isLoading && (
-                 <span className="text-[10px] text-notion-dim truncate max-w-[200px]">{settings.aiPersona.slice(0, 30)}...</span>
              )}
           </div>
         </div>

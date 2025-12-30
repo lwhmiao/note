@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AppSettings, ApiPreset, DEFAULT_PRESET, AppState, ThemeId } from '../types';
-import { X, Save, Plus, Trash2, Download, Upload, RefreshCw, Palette, Globe, Database, Monitor, Type, Copy, Check, CloudDownload, ChevronDown, ShieldAlert } from 'lucide-react';
+import { X, Save, Plus, Trash2, Download, Upload, RefreshCw, Palette, Globe, Database, Monitor, Type, Copy, Check, CloudDownload, ChevronDown, ShieldAlert, RotateCcw } from 'lucide-react';
 import { fetchModels } from '../services/llm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -217,7 +217,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </section>
                   
                   <section className="space-y-3 pt-4 border-t border-notion-border">
-                     <label className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Type size={14}/> 字体设置</label>
+                     <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Type size={14}/> 字体设置</label>
+                        <button onClick={() => setLocalSettings(s => ({...s, fontSize: 14, customFontUrl: ''}))} className="text-xs flex items-center gap-1 text-notion-dim hover:text-notion-text transition-colors">
+                            <RotateCcw size={12}/> 恢复默认
+                        </button>
+                     </div>
                      <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-3">
                              <span className="text-sm font-medium text-notion-text w-16">全局字号</span>
@@ -245,7 +250,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                      </div>
                   </section>
                   <section className="space-y-3 pt-4 border-t border-notion-border">
-                    <label className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Monitor size={14}/> 全局背景</label>
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Monitor size={14}/> 全局背景</label>
+                        {localSettings.globalBackgroundImageUrl && (
+                            <button onClick={() => setLocalSettings(s => ({...s, globalBackgroundImageUrl: ''}))} className="text-xs flex items-center gap-1 text-notion-dim hover:text-notion-text transition-colors">
+                                <RotateCcw size={12}/> 清除背景
+                            </button>
+                        )}
+                    </div>
                     <div className="flex gap-2">
                         <input 
                           className="flex-1 p-3 rounded-xl bg-notion-sidebar border border-notion-border text-xs font-mono placeholder:text-gray-400 truncate focus:ring-2 focus:ring-notion-accent/50 outline-none"
