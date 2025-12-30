@@ -80,43 +80,54 @@ ${JSON.stringify({
 `;
 
 export const fetchModels = async (baseUrl: string, apiKey: string) => {
-  // Remove trailing slash and any hardcoded endpoint paths users might have pasted
+  // Remove trailing slash
   let cleanBaseUrl = baseUrl.replace(/\/$/, '');
   
-  // Clean up if user pasted full path like "https://.../v1/chat/completions"
+  // Clean up common suffixes users might paste
   cleanBaseUrl = cleanBaseUrl.replace(/\/chat\/completions$/, '');
   cleanBaseUrl = cleanBaseUrl.replace(/\/models$/, '');
 
   const errors: string[] = [];
 
-  // Strategy: Try multiple URL patterns because 3rd party APIs are inconsistent.
-  const candidates = [
-    // 1. Google Standard (Official)
-    cleanBaseUrl.includes('v1beta') ? `${cleanBaseUrl}/models` : `${cleanBaseUrl}/v1beta/models`,
-    // 2. Generic /models (Common in proxies)
-    `${cleanBaseUrl}/models`,
-    // 3. OpenAI Style (Very common in aggregators)
-    `${cleanBaseUrl}/v1/models`,
+  // Strategy: Try different URL structures AND Authentication methods.
+  // Many proxies mimic OpenAI's /v1/models and require Authorization header, ignoring ?key=
+  // Google requires ?key= and typically uses /v1beta/models.
+
+  const attempts = [
+    // 1. OpenAI Style: /v1/models with Bearer Header (Most common for proxies)
+    {
+      url: `${cleanBaseUrl}/v1/models`,
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    },
+    // 2. Google Style: /v1beta/models with Query Param (Official Gemini)
+    {
+      url: cleanBaseUrl.includes('v1beta') ? `${cleanBaseUrl}/models?key=${apiKey}` : `${cleanBaseUrl}/v1beta/models?key=${apiKey}`,
+      headers: {}
+    },
+    // 3. Generic Root: /models with Bearer Header (Some custom proxies)
+    {
+      url: `${cleanBaseUrl}/models`,
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    },
+    // 4. OpenAI Style with Query Param (Some proxies allow query param auth)
+    {
+      url: `${cleanBaseUrl}/v1/models?key=${apiKey}`,
+      headers: {}
+    }
   ];
 
-  // Remove duplicates
-  const uniqueUrls = Array.from(new Set(candidates));
-
-  for (const urlWithoutKey of uniqueUrls) {
-      // Handle cases where apiKey might already be in query params? Unlikely but possible.
-      // Standard way: append key
-      const url = `${urlWithoutKey}?key=${apiKey}`;
-      
+  for (const attempt of attempts) {
       try {
-          const res = await fetch(url);
+          const res = await fetch(attempt.url, { headers: attempt.headers });
+          
           if (res.ok) {
               const data = await res.json();
               
-              // Handle { models: [] } (Google) or { data: [] } (OpenAI)
+              // Normalize response: Google returns { models: [] }, OpenAI returns { data: [] }
               let list = [];
-              if (Array.isArray(data.models)) {
+              if (data.models && Array.isArray(data.models)) {
                   list = data.models;
-              } else if (Array.isArray(data.data)) {
+              } else if (data.data && Array.isArray(data.data)) {
                   list = data.data;
               } else if (Array.isArray(data)) {
                   list = data;
@@ -124,29 +135,29 @@ export const fetchModels = async (baseUrl: string, apiKey: string) => {
 
               if (list.length > 0) {
                   return list.map((m: any) => ({
-                      // Google uses "models/name", OpenAI uses "id". We normalize to just the name part usually.
-                      name: m.name || m.id, 
+                      // Google uses "models/gemini-pro", OpenAI uses "id": "gemini-pro"
+                      name: m.name ? m.name.replace(/^models\//, '') : m.id, 
                       displayName: m.displayName || m.id
                   }));
               }
           }
           
-          // Collect error for reporting
+          // Collect error for debugging if all fail
           let errorText = `HTTP ${res.status}`;
           try {
              const text = await res.text();
-             if (text) errorText += `: ${text.slice(0, 100)}`;
+             if (text) errorText += `: ${text.slice(0, 50)}`;
           } catch(e) {}
-          errors.push(`[${urlWithoutKey}] -> ${errorText}`);
+          errors.push(`[${attempt.url}] -> ${errorText}`);
 
       } catch (e: any) {
-          errors.push(`[${urlWithoutKey}] -> ${e.message}`);
+          errors.push(`[${attempt.url}] -> ${e.message}`);
       }
   }
 
   // If we got here, all attempts failed.
   console.error("Fetch Models Failed:", errors);
-  throw new Error(`无法从以下地址获取模型列表:\n${errors.join('\n')}\n\n请确认 Endpoint 是否支持 Google 或 OpenAI 格式的模型列表查询。`);
+  throw new Error(`无法获取模型列表。已尝试多种连接方式均失败。\n请检查 Base URL 是否正确 (如: https://api.openai.com 或 Google Endpoint)。\n\n调试信息:\n${errors.join('\n')}`);
 };
 
 export const generateResponse = async (
@@ -159,6 +170,7 @@ export const generateResponse = async (
 ) => {
   const { baseUrl, apiKey, model, disableTools } = preset;
   
+  // 1. Construct initial content array
   const contents = history.map(msg => {
     if (msg.role === 'model') return { role: 'model', parts: msg.parts || [{ text: msg.text }] };
     if (msg.role === 'function') return { role: 'function', parts: msg.parts };
@@ -171,6 +183,7 @@ export const generateResponse = async (
     return { role: 'user', parts };
   });
 
+  // 2. Add current user message
   if (userMessage || userImage) {
       const currentParts: any[] = [];
       if (userMessage) currentParts.push({ text: userMessage });
@@ -181,16 +194,40 @@ export const generateResponse = async (
       contents.push({ role: 'user', parts: currentParts });
   }
 
-  const payload: any = {
-    contents,
-    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION_TEMPLATE(aiName, fullState) }] },
-  };
+  const systemText = SYSTEM_INSTRUCTION_TEMPLATE(aiName, fullState);
+  const payload: any = {};
 
-  // Only inject tools if NOT disabled.
-  // This fixes the "convert_request_failed" 500 error for proxies that don't support tools.
-  if (!disableTools) {
-    payload.tools = [TOOL_DEFINITIONS];
-    payload.toolConfig = { functionCallingConfig: { mode: "AUTO" } };
+  if (disableTools) {
+      // --- Compatibility Mode (Fix 500 Errors) ---
+      // 1. Do NOT set systemInstruction (many proxies fail to map this).
+      // 2. Do NOT set tools.
+      // 3. Instead, prepend system prompt to the FIRST user message.
+      
+      const finalContents = JSON.parse(JSON.stringify(contents)); // Deep copy
+      
+      // Find the first user message to inject system prompt
+      const firstUserIndex = finalContents.findIndex((c: any) => c.role === 'user');
+      
+      if (firstUserIndex !== -1) {
+          const msg = finalContents[firstUserIndex];
+          if (msg.parts && msg.parts.length > 0 && msg.parts[0].text) {
+              msg.parts[0].text = `[System Instruction]:\n${systemText}\n\n[User Request]:\n${msg.parts[0].text}`;
+          } else {
+              // If image only, unshift text part
+              msg.parts.unshift({ text: `[System Instruction]:\n${systemText}` });
+          }
+      } else {
+          // Fallback if no user message (unlikely), prepend one
+          finalContents.unshift({ role: 'user', parts: [{ text: `[System Instruction]:\n${systemText}` }] });
+      }
+      
+      payload.contents = finalContents;
+  } else {
+      // --- Standard Mode ---
+      payload.contents = contents;
+      payload.systemInstruction = { parts: [{ text: systemText }] };
+      payload.tools = [TOOL_DEFINITIONS];
+      payload.toolConfig = { functionCallingConfig: { mode: "AUTO" } };
   }
 
   // Normalize Base URL
@@ -200,12 +237,13 @@ export const generateResponse = async (
   if (cleanBaseUrl.includes('v1beta')) {
       url = `${cleanBaseUrl}/${model}:generateContent?key=${apiKey}`;
   } else if (cleanBaseUrl.endsWith('/v1')) {
-      // Some proxies use /v1/chat/completions but we are forcing Gemini SDK format.
-      // If user inputs an OpenAI endpoint, this might fail if the proxy doesn't support Gemini proto on that endpoint.
-      // But assuming it's a Gemini compatible endpoint:
+      // Proxy scenario: Try to use the Google protocol on the proxy endpoint.
+      // Many proxies mount Gemini at /v1/models/GEMINI_MODEL:generateContent
+      // But if the user put "https://api.proxy.com/v1", we might need to be careful.
+      // Let's assume standard Gemini REST path structure relative to the provided base.
       url = `${cleanBaseUrl}/models/${model}:generateContent?key=${apiKey}`; 
   } else {
-      // Default Google structure
+      // Default Google structure or generic proxy root
       url = `${cleanBaseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
   }
 
@@ -219,7 +257,7 @@ export const generateResponse = async (
     const err = await response.text();
     // Improved error message
     if (response.status === 500) {
-        throw new Error(`API 500 错误: 服务端处理失败。通常是因为中转不支持 Function Calling。\n请尝试在设置中勾选 [兼容模式: 禁用工具调用]。\n\n原始错误: ${err}`);
+        throw new Error(`API 500 错误: 服务端处理失败。通常是因为中转不支持 Function Calling 或 System Instruction。\n请尝试在设置中勾选 [兼容模式: 禁用工具调用]。\n\n原始错误: ${err}`);
     }
     throw new Error(`API Error (${response.status}): ${err}`);
   }

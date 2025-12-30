@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         <MenuItem view={ViewMode.DAILY_REVIEW} icon={Coffee} label="每日回顾" />
         
         <div className="mt-6 px-4 py-2 text-xs font-semibold text-notion-dim uppercase tracking-wider">管理</div>
-        <MenuItem view={ViewMode.CALENDAR} icon={Calendar} label="日历 & 代办" />
+        <MenuItem view={ViewMode.CALENDAR} icon={Calendar} label="日历 & 待办" />
         <MenuItem view={ViewMode.NOTES} icon={FileText} label="笔记 & 灵感" />
       </nav>
 

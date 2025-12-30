@@ -73,7 +73,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
                         <CalendarDays size={16} /> {month}
                     </h4>
                     <div className="grid grid-cols-1 gap-4">
-                        {items.map(summary => (
+                        {(items as DailySummary[]).map(summary => (
                             summary.date !== today && (
                                 <div key={summary.date} className="bg-white p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-shadow">
                                     <div className="text-xs font-bold text-notion-accentText mb-2">{summary.date}</div>

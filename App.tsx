@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
 import { CalendarView } from './components/CalendarView';
@@ -105,6 +105,11 @@ export default function App() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Draggable Menu Button State
+  const [menuPos, setMenuPos] = useState({ x: window.innerWidth - 60, y: 20 });
+  const [isMenuDragging, setIsMenuDragging] = useState(false);
+  const menuDragStartPos = useRef({ x: 0, y: 0 });
+
   // --- Theme & Font Engine ---
   useEffect(() => {
     const theme = THEMES[settings.themeId] || THEMES.sakura;
@@ -112,7 +117,7 @@ export default function App() {
     
     // Apply Colors
     Object.entries(theme).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
+      root.style.setProperty(key, String(value));
     });
 
     // Apply Font Size
@@ -121,7 +126,7 @@ export default function App() {
 
     // Apply Custom Font
     if (settings.customFontUrl) {
-       let linkId = 'lifeos-custom-font';
+       const linkId = 'lifeos-custom-font';
        let linkEl = document.getElementById(linkId) as HTMLLinkElement;
        if (!linkEl) {
            linkEl = document.createElement('link');
@@ -129,9 +134,10 @@ export default function App() {
            linkEl.rel = 'stylesheet';
            document.head.appendChild(linkEl);
        }
-       linkEl.href = settings.customFontUrl;
+       linkEl.href = String(settings.customFontUrl);
        
-       const match = settings.customFontUrl.match(/family=([^&:]+)/);
+       const fontUrl = String(settings.customFontUrl);
+       const match = fontUrl.match(/family=([^&:]+)/);
        if (match && match[1]) {
            const fontName = match[1].replace(/\+/g, ' ');
            root.style.setProperty('--app-font', `'${fontName}', Inter, sans-serif`);
@@ -146,6 +152,47 @@ export default function App() {
   useEffect(() => localStorage.setItem('lifeos_state', JSON.stringify(appState)), [appState]);
   useEffect(() => localStorage.setItem('lifeos_settings', JSON.stringify(settings)), [settings]);
   useEffect(() => localStorage.setItem('lifeos_chat', JSON.stringify(messages)), [messages]);
+
+  // --- Drag Logic for Menu ---
+  const handleMenuMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    setIsMenuDragging(false);
+    menuDragStartPos.current = { x: clientX, y: clientY };
+
+    const handleMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const moveX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : (moveEvent as MouseEvent).clientX;
+      const moveY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : (moveEvent as MouseEvent).clientY;
+      
+      const diffX = Math.abs(moveX - menuDragStartPos.current.x);
+      const diffY = Math.abs(moveY - menuDragStartPos.current.y);
+
+      if (diffX > 5 || diffY > 5) {
+          setIsMenuDragging(true);
+          setMenuPos({ x: moveX - 24, y: moveY - 24 }); // Centered
+      }
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('touchmove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('touchmove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchend', handleMouseUp);
+  };
+
+  const handleMenuClick = () => {
+      if (!isMenuDragging) {
+          setIsSidebarOpen(!isSidebarOpen);
+      }
+  };
+
 
   // --- Actions ---
   const addTask = (title: string, date: string, tag?: string) => {
@@ -354,13 +401,20 @@ export default function App() {
           <div className="absolute inset-0 bg-white/60 backdrop-blur-md z-0 pointer-events-none" />
       )}
       
-      {/* Changed position to top-right to avoid blocking text */}
-      <button 
-        className="md:hidden fixed top-4 right-4 z-40 p-2 bg-white/80 rounded-xl shadow-sm border border-notion-border text-notion-text backdrop-blur"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      {/* Mobile Draggable Menu Button */}
+      <div 
+         className="md:hidden fixed z-40 touch-none"
+         style={{ left: menuPos.x, top: menuPos.y }}
       >
-        <Menu size={20} />
-      </button>
+          <button 
+            onMouseDown={handleMenuMouseDown}
+            onTouchStart={handleMenuMouseDown}
+            onClick={handleMenuClick}
+            className="p-3 bg-white/90 rounded-2xl shadow-float border border-notion-border text-notion-text backdrop-blur-md active:scale-95 transition-transform"
+          >
+            <Menu size={24} />
+          </button>
+      </div>
 
       <div className="relative z-10 flex h-full w-full">
           <Sidebar 
