@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, AppSettings } from '../types';
 import { Send, Sparkles, X, Loader2, Settings, User, Bot, Image as ImageIcon, Trash2, Upload, Save, Copy, Check, Palette, Edit3, MessageSquare, RotateCw } from 'lucide-react';
@@ -138,7 +139,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'aiAvatarUrl' | 'userAvatarUrl' | 'chatBackgroundImageUrl') => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 500 * 1024) { alert("图片过大，请选择 500KB 以内的图片"); return; }
+      // Removed 500KB limit as requested
       const reader = new FileReader();
       reader.onloadend = () => setTempSettings(prev => ({ ...prev, [field]: reader.result as string }));
       reader.readAsDataURL(file);
@@ -147,6 +148,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleChatImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Removed 500KB limit as requested
     const reader = new FileReader();
     reader.onloadend = () => setPendingImage(reader.result as string);
     reader.readAsDataURL(file);

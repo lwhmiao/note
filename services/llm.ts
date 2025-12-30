@@ -89,10 +89,6 @@ export const fetchModels = async (baseUrl: string, apiKey: string) => {
 
   const errors: string[] = [];
 
-  // Strategy: Try different URL structures AND Authentication methods.
-  // Many proxies mimic OpenAI's /v1/models and require Authorization header, ignoring ?key=
-  // Google requires ?key= and typically uses /v1beta/models.
-
   const attempts = [
     // 1. OpenAI Style: /v1/models with Bearer Header (Most common for proxies)
     {
@@ -199,11 +195,27 @@ export const generateResponse = async (
 
   if (disableTools) {
       // --- Compatibility Mode (Fix 500 Errors) ---
-      // 1. Do NOT set systemInstruction (many proxies fail to map this).
-      // 2. Do NOT set tools.
-      // 3. Instead, prepend system prompt to the FIRST user message.
+      // Fix convert_request_failed by:
+      // 1. Removing systemInstruction field.
+      // 2. Removing tools field.
+      // 3. Removing ALL function calls/responses from history.
       
-      const finalContents = JSON.parse(JSON.stringify(contents)); // Deep copy
+      // Filter out any messages that are purely function related, or sanitize parts.
+      const safeContents = contents.filter(c => {
+          if (c.role === 'function') return false; // Drop tool outputs
+          if (c.role === 'model') {
+             // Check if model message is ONLY function call
+             const hasText = c.parts.some((p: any) => p.text);
+             if (!hasText) return false; 
+          }
+          return true;
+      }).map(c => {
+          // Deep clean parts to remove functionCall objects
+          const cleanParts = c.parts.filter((p: any) => !p.functionCall && !p.functionResponse);
+          return { ...c, parts: cleanParts };
+      });
+      
+      const finalContents = JSON.parse(JSON.stringify(safeContents)); 
       
       // Find the first user message to inject system prompt
       const firstUserIndex = finalContents.findIndex((c: any) => c.role === 'user');
@@ -247,9 +259,16 @@ export const generateResponse = async (
       url = `${cleanBaseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
   }
 
+  // Add BOTH authentication headers to satisfy all types of proxies
+  const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey, // Official Google header
+      'Authorization': `Bearer ${apiKey}` // Common Proxy header
+  };
+
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(payload)
   });
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AppSettings, ApiPreset, DEFAULT_PRESET, AppState, ThemeId } from '../types';
 import { X, Save, Plus, Trash2, Download, Upload, RefreshCw, Palette, Globe, Database, Monitor, Type, Copy, Check, CloudDownload, ChevronDown, ShieldAlert } from 'lucide-react';
@@ -45,10 +46,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'globalBackgroundImageUrl') => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 500 * 1024) { 
-          alert("背景图建议小于 500KB 以保证流畅度");
-          return;
-      }
+      // Removed 500KB limit as requested
       const reader = new FileReader();
       reader.onloadend = () => {
           setLocalSettings(prev => ({ ...prev, [field]: reader.result as string }));
