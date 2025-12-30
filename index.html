@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小记 LifeNote</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['var(--app-font)', 'Inter', 'sans-serif'], // Dynamic font
+              display: ['var(--app-font)', 'Quicksand', 'sans-serif'], 
+            },
+            colors: {
+              notion: {
+                // Using CSS variables for dynamic theming
+                bg: 'var(--color-bg)', 
+                sidebar: 'var(--color-sidebar)', 
+                border: 'var(--color-border)', 
+                text: 'var(--color-text)', 
+                dim: 'var(--color-dim)', 
+                hover: 'var(--color-hover)', 
+                accent: 'var(--color-accent)', 
+                accentBorder: 'var(--color-accent-border)', 
+                accentText: 'var(--color-accent-text)', 
+                dark: '#292524',
+              }
+            },
+            borderRadius: {
+              'xl': '1rem',
+              '2xl': '1.5rem',
+              '3xl': '2rem',
+            },
+            boxShadow: {
+              'soft': '0 8px 30px rgba(0,0,0,0.04)',
+              'float': '0 20px 40px -5px rgba(0, 0, 0, 0.1)'
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Base Variables */
+      :root {
+        --app-font-size: 16px;
+        --app-font: 'Inter';
+      }
+
+      html {
+        font-size: var(--app-font-size);
+      }
+
+      /* Morandi Sakura (Default) - MAXIMUM CONTRAST */
+      :root {
+        --color-bg: #F2EBEB;           
+        --color-sidebar: #FBF7F7;      
+        --color-border: #DBCACA;       
+        --color-text: #050505;         /* Pure Black equivalent for UI */
+        --color-dim: #4A4040;          /* Dark Gray-Brown, much darker than before */
+        --color-hover: #EBE0E0;        
+        --color-accent: #E8D5D5;       
+        --color-accent-border: #CCB0B0; 
+        --color-accent-text: #8F3A3A;  
+      }
+
+      body {
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      /* Subtle Texture - Fixed Opacity Issue */
+      .bg-texture {
+        /* Use a semi-transparent color directly in the gradient instead of opacity on the div */
+        background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+        background-size: 24px 24px;
+        /* opacity: 0.1;  <-- REMOVED THIS LINE, IT WAS CAUSING TEXT FADE */
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--color-border);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-dim);
+      }
+      
+      /* Chat Bubble Override for Clarity */
+      .chat-bubble {
+         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "uuid": "https://esm.sh/uuid@^13.0.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

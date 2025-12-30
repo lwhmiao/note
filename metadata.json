@@ -1,0 +1,5 @@
+{
+  "name": "LifeOS AI",
+  "description": "A Notion-style AI-powered life planner. Chat with your AI assistant to manage tasks, notes, inspirations, and daily summaries automatically.",
+  "requestFramePermissions": []
+}

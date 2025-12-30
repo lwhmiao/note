@@ -1,0 +1,113 @@
+
+export interface Task {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  tag?: string;
+}
+
+export interface Note {
+  id: string;
+  title?: string;
+  content: string;
+  type: 'inspiration' | 'rambling' | 'journal';
+  createdAt: string;
+}
+
+export interface DailySummary {
+  date: string;
+  content: string;
+}
+
+export interface AppState {
+  tasks: Task[];
+  notes: Note[];
+  summaries: DailySummary[];
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model' | 'system' | 'function';
+  text?: string;
+  image?: string; // Base64 string for user uploaded images
+  parts?: any[]; 
+  timestamp: number;
+  isError?: boolean;
+}
+
+export enum ViewMode {
+  DASHBOARD = 'DASHBOARD',
+  CALENDAR = 'CALENDAR',
+  NOTES = 'NOTES',
+  DAILY_REVIEW = 'DAILY_REVIEW',
+  SETTINGS = 'SETTINGS'
+}
+
+export interface ApiPreset {
+  id: string;
+  name: string;
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  disableTools?: boolean; // New: Compatibility mode to fix 500 errors
+}
+
+export type ThemeId = 'sakura' | 'terracotta' | 'matcha' | 'ocean' | 'dark';
+
+export interface AppSettings {
+  // Connection Settings
+  activePresetId: string;
+  presets: ApiPreset[];
+
+  // Persona
+  aiName: string;
+  aiPersona: string;
+  aiAvatarUrl: string;
+  userName: string;
+  userPersona: string;
+  userAvatarUrl: string;
+  historyLimit: number;
+  
+  // Appearance
+  themeId: ThemeId;
+  globalBackgroundImageUrl: string;
+  fontSize: number; 
+  customFontUrl: string;
+
+  // Chat Specific
+  chatBackgroundImageUrl: string;
+  customCss: string;
+}
+
+export const DEFAULT_PRESET: ApiPreset = {
+  id: 'default',
+  name: 'Google Official',
+  apiKey: '',
+  baseUrl: 'https://generativelanguage.googleapis.com',
+  model: 'gemini-1.5-flash',
+  disableTools: false
+};
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  activePresetId: 'default',
+  presets: [DEFAULT_PRESET],
+  
+  aiName: 'LifeOS',
+  aiPersona: '你是一个温柔、细心且富有同理心的生活助手。',
+  aiAvatarUrl: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+  
+  userName: '旅行者',
+  userPersona: '我是这个数字花园的主人。',
+  userAvatarUrl: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png',
+  
+  historyLimit: 20,
+  
+  themeId: 'sakura',
+  globalBackgroundImageUrl: '',
+  fontSize: 14, 
+  customFontUrl: '',
+  
+  chatBackgroundImageUrl: '',
+  customCss: ''
+};
