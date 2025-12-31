@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { AppState } from '../types';
-import { CheckCircle2, Circle, Sparkles, ArrowRight, Plus, X } from 'lucide-react';
+import { CheckCircle2, Circle, Sparkles, ArrowRight, Plus, X, RefreshCw } from 'lucide-react';
 
 interface DashboardProps {
   state: AppState;
@@ -10,9 +11,23 @@ interface DashboardProps {
   goToDailyReview: () => void;
 }
 
+const QUOTES = [
+    "今天也是充满可能的一天。",
+    "慢慢来，比较快。",
+    "保持热爱，奔赴山海。",
+    "生活明朗，万物可爱。",
+    "且停且忘且随风，且行且看且从容。",
+    "即使是微小的进步，也是成长的足迹。",
+    "你比想象中更强大。",
+    "好好生活，慢慢相遇。",
+    "此时此刻，就是最好的时刻。",
+    "允许一切发生，拥抱每一个当下。"
+];
+
 export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAddTask, onGenerateSummary, goToDailyReview }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [quoteIndex, setQuoteIndex] = useState(0);
 
   const today = new Date().toISOString().split('T')[0];
   const todayTasks = state.tasks.filter(t => t.date === today);
@@ -40,11 +55,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
     setIsAddingTask(false);
   };
 
+  const refreshQuote = () => {
+      let newIndex;
+      do {
+          newIndex = Math.floor(Math.random() * QUOTES.length);
+      } while (newIndex === quoteIndex && QUOTES.length > 1);
+      setQuoteIndex(newIndex);
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto h-full overflow-y-auto bg-texture">
       <header className="mb-10 mt-4">
         <h1 className="text-5xl font-display font-bold text-notion-text mb-3 tracking-tight">{getGreeting()}</h1>
-        <p className="text-notion-dim text-lg">今天也是充满可能的一天。</p>
+        <div className="flex items-center gap-2 group">
+            <p className="text-notion-dim text-lg">{QUOTES[quoteIndex]}</p>
+            <button 
+                onClick={refreshQuote}
+                className="p-1.5 rounded-full text-notion-dim/50 hover:bg-notion-hover hover:text-notion-text transition-colors opacity-0 group-hover:opacity-100"
+                title="刷新语录"
+            >
+                <RefreshCw size={14} />
+            </button>
+        </div>
       </header>
 
       {/* Grid Layout Adjustment: lg:grid-cols-12 */}

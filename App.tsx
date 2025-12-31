@@ -195,8 +195,9 @@ export default function App() {
 
 
   // --- Actions ---
-  const addTask = (title: string, date: string, tag?: string) => {
-    const newTask: Task = { id: uuidv4(), title, date, completed: false, tag };
+  // Modified addTask to accept optional completed status
+  const addTask = (title: string, date: string, tag?: string, completed: boolean = false) => {
+    const newTask: Task = { id: uuidv4(), title, date, completed, tag };
     setAppState(prev => ({ ...prev, tasks: [...prev.tasks, newTask] }));
     return newTask;
   };
@@ -240,6 +241,15 @@ export default function App() {
       };
     });
   };
+
+  const deleteSummary = (date: string) => {
+      setAppState(prev => ({ ...prev, summaries: prev.summaries.filter(s => s.date !== date) }));
+  };
+
+  const handleResetData = () => {
+      setAppState(initialState);
+      setMessages([]);
+  };
   
   const getActivePreset = () => settings.presets.find(p => p.id === settings.activePresetId);
 
@@ -256,33 +266,74 @@ export default function App() {
       if (!activePreset || !activePreset.apiKey) { setIsSettingsOpen(true); return; }
       setIsGeneratingSummary(true);
       try {
-          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。`;
-          const result = await callAI(prompt);
-          updateSummary(date, result);
-      } catch (e) { alert("生成失败"); } finally { setIsGeneratingSummary(false); }
+          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。如果涉及更新总结，请直接使用 JSON action。`;
+          const rawResult = await callAI(prompt);
+          
+          let finalContent = rawResult;
+          
+          // Parse JSON logic to avoid leakage and actually use the structured data if provided
+          const jsonMatch = rawResult.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+              try {
+                  const json = JSON.parse(jsonMatch[1]);
+                  // Check if there is an update_summary action
+                  const summaryAction = json.actions?.find((a: any) => a.type === 'update_summary');
+                  
+                  if (summaryAction && summaryAction.content) {
+                      finalContent = summaryAction.content;
+                  } else {
+                      // If no specific action, just strip the JSON block from the text
+                      finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
+                  }
+              } catch (e) {
+                  console.error("Error parsing summary JSON", e);
+                  // Fallback: strip JSON regex
+                  finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
+              }
+          }
+
+          // Clean up chat bubbles separators if present
+          finalContent = finalContent.split('|||').join('\n').trim();
+
+          if (finalContent) {
+              updateSummary(date, finalContent);
+          }
+      } catch (e) { 
+          alert("生成失败"); 
+      } finally { 
+          setIsGeneratingSummary(false); 
+      }
   };
 
-  const handleToolExecution = (call: any) => {
-    const { name, args } = call;
-    if (name === 'manage_task') {
-      if (args.action === 'create') {
-        const t = addTask(args.title, args.date || new Date().toLocaleDateString('en-CA'), args.tag);
-        return { result: "success", taskId: t.id };
+  // Agent Executor (Protocol Handler)
+  const executeAgentAction = (action: any) => {
+      console.log("Agent executing:", action);
+      try {
+          switch (action.type) {
+              case 'create_task':
+                  // Pass action.completed if provided
+                  addTask(action.title, action.date, action.tag, action.completed || false);
+                  break;
+              case 'update_task':
+              case 'complete_task':
+                  updateTask(action.id, action.action === 'complete_task' ? { completed: true } : action);
+                  break;
+              case 'delete_task':
+                  deleteTask(action.id);
+                  break;
+              case 'create_note':
+                  addNote(action.content, action.noteType || 'inspiration');
+                  break;
+              case 'delete_note':
+                  deleteNote(action.id);
+                  break;
+              case 'update_summary':
+                  updateSummary(action.date, action.content);
+                  break;
+          }
+      } catch (e) {
+          console.error("Agent execution failed", e);
       }
-      if (args.action === 'update' || args.action === 'complete') {
-        if (!args.id) return { error: "ID required" };
-        updateTask(args.id, args.action === 'complete' ? { completed: true } : args);
-        return { result: "success" };
-      }
-      if (args.action === 'delete') { deleteTask(args.id); return { result: "success" }; }
-    }
-    if (name === 'manage_note') {
-       if (args.action === 'create') { const n = addNote(args.content, args.type || 'inspiration'); return { result: "success", noteId: n.id }; }
-       if (args.action === 'delete') { deleteNote(args.id); return { result: "success" }; }
-    }
-    if (name === 'update_daily_summary') { updateSummary(args.date || new Date().toLocaleDateString('en-CA'), args.content); return { result: "success" }; }
-    if (name === 'get_current_state') return { result: "State provided in system prompt." };
-    return { error: "Unknown tool" };
   };
 
   const handleUserPost = (text: string, image?: string) => {
@@ -313,15 +364,20 @@ export default function App() {
       const historyLimit = settings.historyLimit || 20;
       let currentMessages = [...messages];
 
-      // Regeneration Logic
+      // Regeneration Logic: Remove ALL AI messages from the last turn
       if (regenerate) {
-          // If the last message is from model/error, remove it
-          if (currentMessages.length > 0) {
-              const lastMsg = currentMessages[currentMessages.length - 1];
-              if (lastMsg.role === 'model' || lastMsg.role === 'function' || lastMsg.role === 'system') {
-                  currentMessages.pop();
-                  setMessages(currentMessages); // Update UI immediately
+          let lastUserIndex = -1;
+          for (let i = currentMessages.length - 1; i >= 0; i--) {
+              if (currentMessages[i].role === 'user') {
+                  lastUserIndex = i;
+                  break;
               }
+          }
+          
+          if (lastUserIndex !== -1) {
+              // Keep messages up to and including the last user message
+              currentMessages = currentMessages.slice(0, lastUserIndex + 1);
+              setMessages(currentMessages); // Visual update
           }
       }
 
@@ -333,50 +389,43 @@ export default function App() {
       
       if (!modelContent) throw new Error("No content");
 
-      const functionCalls = modelContent.parts?.filter((p: any) => p.functionCall);
+      // Check for JSON Protocol (The Agent "Brain") inside text
+      // We do this BEFORE parsing standard tools to support the "Pseudo-Tool" mode
+      const rawText = modelContent.parts?.map((p: any) => p.text).join('') || "";
+      
+      let displayText = rawText;
+      let agentActions: any[] = [];
 
-      if (functionCalls && functionCalls.length > 0) {
-         // If tools are disabled, we shouldn't get here, but if we do, handle gracefully or ignore
-         const toolCallMsg: ChatMessage = { id: uuidv4(), role: 'model', parts: modelContent.parts, timestamp: Date.now() };
-         
-         const functionResponses = functionCalls.map((part: any) => {
-            const result = handleToolExecution(part.functionCall);
-            return {
-              functionResponse: {
-                name: part.functionCall.name,
-                response: { name: part.functionCall.name, content: result }
+      // Regex to find JSON blocks: ```json ... ```
+      const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
+      
+      if (jsonMatch) {
+          try {
+              const jsonContent = JSON.parse(jsonMatch[1]);
+              if (jsonContent.actions && Array.isArray(jsonContent.actions)) {
+                  agentActions = jsonContent.actions;
+                  
+                  // Execute Agent Actions
+                  agentActions.forEach(action => executeAgentAction(action));
+
+                  // Clean the text for display (Remove the JSON block)
+                  displayText = rawText.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
+                  
+                  // If text is empty after removing JSON, add a fallback "Done" message
+                  if (!displayText) {
+                      displayText = "已为您更新日程。";
+                  }
               }
-            };
-         });
-
-         const toolResponseMsg: ChatMessage = {
-            id: uuidv4(), role: 'function', parts: functionResponses, timestamp: Date.now()
-         };
-
-         // Recursive call for tool output
-         const response2 = await generateResponse(
-            activePreset, settings.aiName, 
-            [...recentHistory, toolCallMsg, toolResponseMsg], 
-            appState, ""
-         );
-
-         const finalParts = response2.candidates?.[0]?.content?.parts;
-         const finalText = finalParts?.map((p: any) => p.text).join('') || "已处理完成。";
-         
-         // Split logic for multi-bubble simulation
-         const bubbles = finalText.split('|||').map(s => s.trim()).filter(s => s);
-         bubbles.forEach(b => {
-             setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
-         });
-
-      } else {
-         const textParts = modelContent.parts?.map((p: any) => p.text).join('');
-         // Split logic for multi-bubble simulation
-         const bubbles = textParts.split('|||').map(s => s.trim()).filter(s => s);
-         bubbles.forEach(b => {
-             setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
-         });
+          } catch (e) {
+              console.error("Failed to parse Agent JSON", e);
+          }
       }
+
+      // Display the cleaned text bubbles
+      const bubbles = displayText.split('|||').map(s => s.trim()).filter(s => s);
+      bubbles.forEach(b => {
+             setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
+      });
 
     } catch (e: any) {
       console.error(e);
@@ -397,8 +446,9 @@ export default function App() {
             backgroundPosition: 'center'
         }}
     >
+      {/* 1. Adjusted Overlay: Less blur, more transparent white */}
       {settings.globalBackgroundImageUrl && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-md z-0 pointer-events-none" />
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-0 pointer-events-none" />
       )}
       
       {/* Mobile Draggable Menu Button */}
@@ -442,6 +492,7 @@ export default function App() {
                 <DailyReview 
                     summaries={appState.summaries}
                     onUpdateSummary={updateSummary}
+                    onDeleteSummary={deleteSummary}
                     onGenerateSummary={handleGenerateSummary}
                     isGenerating={isGeneratingSummary}
                 />
@@ -490,6 +541,7 @@ export default function App() {
         onSaveSettings={setSettings}
         appState={appState}
         onImportState={(newState) => { setAppState(newState); setMessages([]); }}
+        onResetData={handleResetData}
       />
       
     </div>

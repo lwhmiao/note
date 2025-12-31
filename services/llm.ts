@@ -1,82 +1,58 @@
 
-import { ApiPreset, AppState, ChatMessage, Task, Note, DailySummary } from '../types';
 
-const TOOL_DEFINITIONS = {
-  function_declarations: [
-    {
-      name: "manage_task",
-      description: "Create, update, or delete a task/todo item in the calendar.",
-      parameters: {
-        type: "OBJECT",
-        properties: {
-          action: { type: "STRING", enum: ["create", "update", "delete", "complete"] },
-          title: { type: "STRING" },
-          date: { type: "STRING", description: "YYYY-MM-DD" },
-          id: { type: "STRING" },
-          tag: { type: "STRING" }
-        },
-        required: ["action"]
-      }
-    },
-    {
-      name: "manage_note",
-      description: "Create or delete a note.",
-      parameters: {
-        type: "OBJECT",
-        properties: {
-          action: { type: "STRING", enum: ["create", "delete"] },
-          content: { type: "STRING" },
-          type: { type: "STRING", enum: ["inspiration", "rambling", "journal"] },
-          id: { type: "STRING" }
-        },
-        required: ["action"]
-      }
-    },
-    {
-      name: "update_daily_summary",
-      description: "Update summary.",
-      parameters: {
-        type: "OBJECT",
-        properties: {
-          content: { type: "STRING" },
-          date: { type: "STRING" }
-        },
-        required: ["content"]
-      }
-    },
-    {
-      name: "get_current_state",
-      description: "Get user data.",
-      parameters: { type: "OBJECT", properties: {} }
-    }
-  ]
-};
+import { ApiPreset, AppState, ChatMessage, Task, Note, DailySummary } from '../types';
 
 // RAG-Lite Strategy: Inject full state as context
 const SYSTEM_INSTRUCTION_TEMPLATE = (aiName: string, state: AppState) => `
 **Role Definition:**
-You are "${aiName}", a gentle, empathetic, and organized life assistant.
+You are "${aiName}", a gentle, empathetic, and highly organized life assistant (Butler).
 
-**Communication Style (CRITICAL):**
-1. **Act like a real person sending chat messages.**
-2. **DO NOT** output one long block of text.
-3. Instead, split your response into multiple short, distinct messages (1 to 10 bubbles) to simulate real-time chatting.
-4. Use the delimiter "|||" to separate these messages.
-   Example Output: 
-   "Hi there! ||| I see you have a lot on your plate today. ||| Shall we tackle the most important task first?"
+**Communication Protocol (CRITICAL):**
+1. **Chatting:** Act like a real person. Split responses into short bubbles using "|||".
+   Example: "Got it! ||| I'll handle that for you."
+
+2. **ACTION PROTOCOL (The "Butler" Mode):**
+   You have the power to manage the user's LifeOS. 
+   When the user asks to add/delete/update tasks, notes, or summaries, **YOU MUST** return a strictly formatted JSON block inside your response.
+   
+   **JSON Format:**
+   \`\`\`json
+   {
+     "actions": [
+       { "type": "create_task", "title": "Buy milk", "date": "YYYY-MM-DD", "tag": "Life" },
+       { "type": "delete_task", "id": "task_id" },
+       { "type": "create_note", "content": "Idea...", "noteType": "inspiration" }
+     ]
+   }
+   \`\`\`
+   
+   **Available Action Types:**
+   - \`create_task\`: requires \`title\`, \`date\` (YYYY-MM-DD), optional \`tag\`, optional \`completed\` (boolean, e.g. true for done).
+   - \`delete_task\`: requires \`id\`.
+   - \`update_task\`: requires \`id\`, optional fields to update.
+   - \`create_note\`: requires \`content\`, \`noteType\` ('inspiration'|'rambling'|'journal').
+   - \`delete_note\`: requires \`id\`.
+   - \`update_summary\`: requires \`date\`, \`content\`.
+
+   **Rules for Actions:**
+   - Always assume the current year is ${new Date().getFullYear()}.
+   - Today is ${new Date().toLocaleDateString('en-CA')}.
+   - If user says "tomorrow", calculate the date based on today.
+   - If user says "Delete the gym task", look at the context JSON below to find the ID.
+   - You can return BOTH text bubbles and the JSON block. The user will see the text, and the app will execute the JSON hiddenly.
 
 **User Data Context (RAG-Lite Injection):**
 ${JSON.stringify({
-  today: new Date().toLocaleDateString('en-CA'),
+  currentDate: new Date().toLocaleDateString('en-CA'),
   allTasks: state.tasks,
   allNotes: state.notes, 
   todaySummary: state.summaries.find(s => s.date === new Date().toLocaleDateString('en-CA'))
 }, null, 2)}
 
 **Operational Guidelines:**
-1. Always respond in Chinese.
-2. If user asks to create a task/note, USE TOOLS (Unless functionality is limited).
-3. Be proactive and warm.
+1. Always respond in Chinese unless asked otherwise.
+2. Be proactive. If user says "I want to work out for 3 days starting today", generate 3 \`create_task\` actions.
+3. Be warm and supportive.
 `;
 
 export const fetchModels = async (baseUrl: string, apiKey: string) => {
@@ -193,77 +169,52 @@ export const generateResponse = async (
   const systemText = SYSTEM_INSTRUCTION_TEMPLATE(aiName, fullState);
   const payload: any = {};
 
-  if (disableTools) {
-      // --- Compatibility Mode (Fix 500 Errors) ---
-      // Fix convert_request_failed by:
-      // 1. Removing systemInstruction field.
-      // 2. Removing tools field.
-      // 3. Removing ALL function calls/responses from history.
+  // For the new "Agent" mode via JSON, we essentially always run in "disableTools" mode regarding the API,
+  // but we inject the instructions into the prompt.
+  // The system instruction field is often the cause of 500 errors on proxies, so we inject it into the first user message if needed.
+  
+  // Always inject system prompt into first user message to be safe across all proxy types
+  const finalContents = JSON.parse(JSON.stringify(contents)); 
+  
+  // Find the first user message to inject system prompt
+  const firstUserIndex = finalContents.findIndex((c: any) => c.role === 'user');
+  const instructionMarker = "[System Instruction]:";
+  
+  if (firstUserIndex !== -1) {
+      const msg = finalContents[firstUserIndex];
+      // Check if it already has system instruction (e.g. from history), if not add it
+      const hasInstruction = msg.parts.some((p:any) => p.text && p.text.includes(instructionMarker));
       
-      // Filter out any messages that are purely function related, or sanitize parts.
-      const safeContents = contents.filter(c => {
-          if (c.role === 'function') return false; // Drop tool outputs
-          if (c.role === 'model') {
-             // Check if model message is ONLY function call
-             const hasText = c.parts.some((p: any) => p.text);
-             if (!hasText) return false; 
-          }
-          return true;
-      }).map(c => {
-          // Deep clean parts to remove functionCall objects
-          const cleanParts = c.parts.filter((p: any) => !p.functionCall && !p.functionResponse);
-          return { ...c, parts: cleanParts };
-      });
-      
-      const finalContents = JSON.parse(JSON.stringify(safeContents)); 
-      
-      // Find the first user message to inject system prompt
-      const firstUserIndex = finalContents.findIndex((c: any) => c.role === 'user');
-      
-      if (firstUserIndex !== -1) {
-          const msg = finalContents[firstUserIndex];
+      if (!hasInstruction) {
           if (msg.parts && msg.parts.length > 0 && msg.parts[0].text) {
-              msg.parts[0].text = `[System Instruction]:\n${systemText}\n\n[User Request]:\n${msg.parts[0].text}`;
+              msg.parts[0].text = `${instructionMarker}\n${systemText}\n\n[User Request]:\n${msg.parts[0].text}`;
           } else {
-              // If image only, unshift text part
-              msg.parts.unshift({ text: `[System Instruction]:\n${systemText}` });
+              msg.parts.unshift({ text: `${instructionMarker}\n${systemText}` });
           }
-      } else {
-          // Fallback if no user message (unlikely), prepend one
-          finalContents.unshift({ role: 'user', parts: [{ text: `[System Instruction]:\n${systemText}` }] });
       }
-      
-      payload.contents = finalContents;
   } else {
-      // --- Standard Mode ---
-      payload.contents = contents;
-      payload.systemInstruction = { parts: [{ text: systemText }] };
-      payload.tools = [TOOL_DEFINITIONS];
-      payload.toolConfig = { functionCallingConfig: { mode: "AUTO" } };
+      finalContents.unshift({ role: 'user', parts: [{ text: `${instructionMarker}\n${systemText}` }] });
   }
+  
+  payload.contents = finalContents;
+  // We DO NOT send `tools` or `systemInstruction` field to API to avoid 500 errors. 
+  // We rely purely on the Prompt to get JSON back.
 
   // Normalize Base URL
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
   let url = '';
-  // Smart construction based on path content
   if (cleanBaseUrl.includes('v1beta')) {
       url = `${cleanBaseUrl}/${model}:generateContent?key=${apiKey}`;
   } else if (cleanBaseUrl.endsWith('/v1')) {
-      // Proxy scenario: Try to use the Google protocol on the proxy endpoint.
-      // Many proxies mount Gemini at /v1/models/GEMINI_MODEL:generateContent
-      // But if the user put "https://api.proxy.com/v1", we might need to be careful.
-      // Let's assume standard Gemini REST path structure relative to the provided base.
       url = `${cleanBaseUrl}/models/${model}:generateContent?key=${apiKey}`; 
   } else {
-      // Default Google structure or generic proxy root
       url = `${cleanBaseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
   }
 
-  // Add BOTH authentication headers to satisfy all types of proxies
   const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey, // Official Google header
-      'Authorization': `Bearer ${apiKey}` // Common Proxy header
+      'x-goog-api-key': apiKey, 
+      'Authorization': `Bearer ${apiKey}` 
   };
 
   const response = await fetch(url, {
@@ -274,9 +225,8 @@ export const generateResponse = async (
 
   if (!response.ok) {
     const err = await response.text();
-    // Improved error message
     if (response.status === 500) {
-        throw new Error(`API 500 错误: 服务端处理失败。通常是因为中转不支持 Function Calling 或 System Instruction。\n请尝试在设置中勾选 [兼容模式: 禁用工具调用]。\n\n原始错误: ${err}`);
+        throw new Error(`API 500 错误: 服务端处理失败。请确保模型支持较长的 Context。\n\n原始错误: ${err}`);
     }
     throw new Error(`API Error (${response.status}): ${err}`);
   }

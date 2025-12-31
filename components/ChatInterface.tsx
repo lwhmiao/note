@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { ChatMessage, AppSettings } from '../types';
 import { Send, Sparkles, X, Loader2, Settings, User, Bot, Image as ImageIcon, Trash2, Upload, Save, Copy, Check, Palette, Edit3, MessageSquare, RotateCw } from 'lucide-react';
 
@@ -49,6 +49,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const dragStartPos = useRef({ x: 0, y: 0 });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const displayMessages = messages.filter(m => m.role === 'user' || m.role === 'model' || (m.role === 'system' && m.isError));
   
   const lastMessageIsUser = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === 'user';
@@ -59,9 +61,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (showSettings) setTempSettings(settings);
   }, [showSettings, settings]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isOpen, showSettings, editingId]);
+  // Use layout effect for immediate scroll before paint to prevent jump
+  useLayoutEffect(() => {
+    if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages, isOpen, showSettings]);
 
   useEffect(() => {
      if (settings.customCss) {
@@ -351,7 +356,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Header */}
       <div className="relative z-10 p-3 border-b border-notion-border flex justify-between items-center bg-white/90 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <img src={settings.aiAvatarUrl} alt="AI" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+          <img src={settings.aiAvatarUrl} alt="AI" className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" />
           <div className="flex flex-col">
              {isLoading ? (
                  <span className="font-display font-bold text-lg text-notion-accentText animate-pulse">对方正在输入...</span>
@@ -368,6 +373,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Messages */}
       <div 
+        ref={scrollContainerRef}
         className="relative z-10 flex-1 overflow-y-auto p-4 space-y-6 max-w-4xl mx-auto w-full pb-32 overflow-x-hidden" 
         onClick={() => setActiveMenuId(null)}
       >
@@ -388,7 +394,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
           return (
             <div key={msg.id} className={`flex items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} chat-message-row group relative`}>
-               <img src={avatar} className="w-8 h-8 rounded-full object-cover border border-white shadow-sm mb-1 bg-white shrink-0" />
+               <img src={avatar} className="w-12 h-12 rounded-full object-cover border border-white shadow-sm mb-1 bg-white shrink-0" />
                
                <div className={`relative flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
                   
@@ -447,7 +453,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         })}
         {isLoading && (
            <div className="flex items-end gap-3">
-              <img src={settings.aiAvatarUrl} className="w-8 h-8 rounded-full object-cover border border-white shadow-sm mb-1 bg-white" />
+              <img src={settings.aiAvatarUrl} className="w-12 h-12 rounded-full object-cover border border-white shadow-sm mb-1 bg-white" />
               <div className="bg-white px-5 py-3 rounded-2xl rounded-bl-sm border border-notion-border shadow-sm flex items-center gap-2">
                 <Loader2 size={16} className="animate-spin text-notion-accentText" />
               </div>

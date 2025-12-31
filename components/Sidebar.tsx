@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ViewMode } from '../types';
 import { Calendar, FileText, LayoutDashboard, Settings, Coffee, NotebookText, Heart } from 'lucide-react';
@@ -34,13 +35,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     <div className={baseClass}>
       <div className="p-8 flex items-center gap-3 mb-2 sidebar-header">
         <div className="relative group cursor-pointer">
-            {/* Morandi background shape (Soft Beige/Latte) */}
-            <div className="w-10 h-10 bg-[#E6DCCF] rounded-[14px] flex items-center justify-center text-[#8C7B75] shadow-sm transform transition-transform group-hover:rotate-6 group-hover:scale-105">
+            {/* Dynamic theme colors used here */}
+            <div className="w-10 h-10 bg-notion-accent rounded-[14px] flex items-center justify-center text-notion-accentText shadow-sm transform transition-transform group-hover:rotate-6 group-hover:scale-105">
                 <NotebookText size={20} />
             </div>
-            {/* Cute accent (Soft Pink Heart) */}
-            <div className="absolute -bottom-1 -right-1 bg-[#F2EBEB] p-0.5 rounded-full border-2 border-notion-sidebar">
-                <Heart size={10} fill="#DFA9A9" stroke="#DFA9A9" />
+            {/* Cute accent */}
+            <div className="absolute -bottom-1 -right-1 bg-notion-bg p-0.5 rounded-full border-2 border-notion-sidebar">
+                <Heart size={10} className="fill-notion-accentText text-notion-accentText opacity-60" />
             </div>
         </div>
         <span className="font-display font-bold text-xl text-notion-text tracking-tight">小记 <span className="text-xs font-normal text-notion-dim opacity-70">LifeNote</span></span>

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AppSettings, ApiPreset, DEFAULT_PRESET, AppState, ThemeId } from '../types';
-import { X, Save, Plus, Trash2, Download, Upload, RefreshCw, Palette, Globe, Database, Monitor, Type, Copy, Check, CloudDownload, ChevronDown, ShieldAlert, RotateCcw } from 'lucide-react';
+import { X, Save, Plus, Trash2, Download, Upload, RefreshCw, Palette, Globe, Database, Monitor, Type, Copy, Check, CloudDownload, ChevronDown, ShieldAlert, RotateCcw, AlertTriangle } from 'lucide-react';
 import { fetchModels } from '../services/llm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,6 +12,7 @@ interface SettingsModalProps {
   onSaveSettings: (s: AppSettings) => void;
   appState: AppState;
   onImportState: (s: AppState) => void;
+  onResetData: () => void;
 }
 
 const THEMES: { id: ThemeId; name: string; color: string }[] = [
@@ -23,7 +24,7 @@ const THEMES: { id: ThemeId; name: string; color: string }[] = [
 ];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
-  isOpen, onClose, settings, onSaveSettings, appState, onImportState
+  isOpen, onClose, settings, onSaveSettings, appState, onImportState, onResetData
 }) => {
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [activeTab, setActiveTab] = useState<'appearance' | 'api' | 'data'>('appearance');
@@ -124,6 +125,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     } finally {
       setIsTesting(false);
     }
+  };
+
+  const handleResetAll = () => {
+      if(window.confirm("【严重警告】此操作将永久删除所有任务、笔记、回顾和聊天记录！\n\n确定要清空所有数据吗？")) {
+          onResetData();
+          alert("数据已重置。");
+          onClose();
+      }
   };
 
   const activePreset = localSettings.presets.find(p => p.id === localSettings.activePresetId) || localSettings.presets[0];
@@ -444,6 +453,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                    选择备份文件
                    <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                  </label>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="p-6 bg-red-50/50 rounded-2xl border border-red-100 shadow-sm flex flex-col items-center text-center gap-4 hover:bg-red-50 transition-colors">
+                  <div className="p-3 bg-red-100 rounded-full text-red-500">
+                      <AlertTriangle size={24} />
+                  </div>
+                  <div>
+                      <h3 className="font-bold text-red-800">危险区域</h3>
+                      <p className="text-sm text-red-600/70 mt-1">永久清空所有应用数据，无法恢复。</p>
+                  </div>
+                  <button type="button" onClick={handleResetAll} className="px-6 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-opacity flex items-center gap-2">
+                      <Trash2 size={16}/> 彻底重置
+                  </button>
               </div>
             </div>
           )}
