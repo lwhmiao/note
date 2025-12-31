@@ -386,7 +386,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
         
-        {displayMessages.map((msg) => {
+        {displayMessages.map((msg, index) => {
           const isUser = msg.role === 'user';
           const avatar = isUser ? settings.userAvatarUrl : settings.aiAvatarUrl;
           const isActive = activeMenuId === msg.id;
@@ -401,7 +401,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   {/* Floating Action Menu - Simplified and robust */}
                   {isActive && (
                       <div 
-                        className={`absolute bottom-full mb-2 z-20 bg-notion-dark text-white rounded-xl shadow-float flex items-center p-1.5 gap-1 animate-in zoom-in-95 fade-in duration-200 ${isUser ? 'right-0' : 'left-0'}`}
+                        className={`absolute ${index === 0 ? 'top-full mt-2' : 'bottom-full mb-2'} z-20 bg-notion-dark text-white rounded-xl shadow-float flex items-center p-1.5 gap-1 animate-in zoom-in-95 fade-in duration-200 ${isUser ? 'right-0' : 'left-0'}`}
                         // Stop bubbling immediately to prevent closing the menu
                         onClick={e => { e.stopPropagation(); }}
                       >
