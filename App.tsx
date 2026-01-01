@@ -282,17 +282,15 @@ export default function App() {
                   if (summaryAction && summaryAction.content) {
                       finalContent = summaryAction.content;
                   } else {
-                      // If no specific action, just strip the JSON block from the text
+                      // If no specific action, strip JSON block
                       finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
                   }
               } catch (e) {
-                  console.error("Error parsing summary JSON", e);
-                  // Fallback: strip JSON regex
                   finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
               }
           }
 
-          // Clean up chat bubbles separators if present
+          // Clean up chat bubbles separators
           finalContent = finalContent.split('|||').join('\n').trim();
 
           if (finalContent) {
@@ -305,13 +303,11 @@ export default function App() {
       }
   };
 
-  // Agent Executor (Protocol Handler)
+  // Agent Executor
   const executeAgentAction = (action: any) => {
-      console.log("Agent executing:", action);
       try {
           switch (action.type) {
               case 'create_task':
-                  // Pass action.completed if provided
                   addTask(action.title, action.date, action.tag, action.completed || false);
                   break;
               case 'update_task':
@@ -364,7 +360,6 @@ export default function App() {
       const historyLimit = settings.historyLimit || 20;
       let currentMessages = [...messages];
 
-      // Regeneration Logic: Remove ALL AI messages from the last turn
       if (regenerate) {
           let lastUserIndex = -1;
           for (let i = currentMessages.length - 1; i >= 0; i--) {
@@ -373,59 +368,49 @@ export default function App() {
                   break;
               }
           }
-          
           if (lastUserIndex !== -1) {
-              // Keep messages up to and including the last user message
               currentMessages = currentMessages.slice(0, lastUserIndex + 1);
-              setMessages(currentMessages); // Visual update
+              setMessages(currentMessages);
           }
       }
 
       const recentHistory = currentMessages.slice(-historyLimit);
-      
       const response = await generateResponse(activePreset, settings.aiName, recentHistory, appState, "");
       const candidate = response.candidates?.[0];
       const modelContent = candidate?.content;
       
       if (!modelContent) throw new Error("No content");
 
-      // Check for JSON Protocol (The Agent "Brain") inside text
-      // We do this BEFORE parsing standard tools to support the "Pseudo-Tool" mode
       const rawText = modelContent.parts?.map((p: any) => p.text).join('') || "";
-      
       let displayText = rawText;
-      let agentActions: any[] = [];
 
-      // Regex to find JSON blocks: ```json ... ```
       const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
-      
       if (jsonMatch) {
           try {
               const jsonContent = JSON.parse(jsonMatch[1]);
               if (jsonContent.actions && Array.isArray(jsonContent.actions)) {
-                  agentActions = jsonContent.actions;
-                  
-                  // Execute Agent Actions
-                  agentActions.forEach(action => executeAgentAction(action));
-
-                  // Clean the text for display (Remove the JSON block)
+                  jsonContent.actions.forEach((action: any) => executeAgentAction(action));
                   displayText = rawText.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
-                  
-                  // If text is empty after removing JSON, add a fallback "Done" message
-                  if (!displayText) {
-                      displayText = "已为您更新日程。";
-                  }
+                  if (!displayText) displayText = "已为您更新日程。";
               }
           } catch (e) {
               console.error("Failed to parse Agent JSON", e);
           }
       }
 
-      // Display the cleaned text bubbles
       const bubbles = displayText.split('|||').map(s => s.trim()).filter(s => s);
-      bubbles.forEach(b => {
-             setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
-      });
+      
+      // Sequential bubble display with human-like delay
+      for (let i = 0; i < bubbles.length; i++) {
+          const b = bubbles[i];
+          setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
+          
+          // Don't wait after the last bubble
+          if (i < bubbles.length - 1) {
+              const delay = 600 + Math.random() * 800; // Human-like rhythm
+              await new Promise(resolve => setTimeout(resolve, delay));
+          }
+      }
 
     } catch (e: any) {
       console.error(e);
@@ -446,12 +431,10 @@ export default function App() {
             backgroundPosition: 'center'
         }}
     >
-      {/* 1. Adjusted Overlay: Less blur, more transparent white */}
       {settings.globalBackgroundImageUrl && (
           <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-0 pointer-events-none" />
       )}
       
-      {/* Mobile Draggable Menu Button */}
       <div 
          className="md:hidden fixed z-40 touch-none"
          style={{ left: menuPos.x, top: menuPos.y }}
@@ -476,7 +459,6 @@ export default function App() {
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
 
-          {/* Added Shadow and Margin to create the "Card/App" feel on desktop */}
           <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-white/50 md:bg-white/40 md:rounded-l-[3rem] shadow-2xl shadow-black/5 md:my-3 md:mr-3 border border-notion-border transition-all backdrop-blur-sm">
             <div className="flex-1 overflow-hidden relative">
               {currentView === ViewMode.DASHBOARD && (
