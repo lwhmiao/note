@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
@@ -282,15 +283,17 @@ export default function App() {
                   if (summaryAction && summaryAction.content) {
                       finalContent = summaryAction.content;
                   } else {
-                      // If no specific action, strip JSON block
+                      // If no specific action, just strip the JSON block from the text
                       finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
                   }
               } catch (e) {
+                  console.error("Error parsing summary JSON", e);
+                  // Fallback: strip JSON regex
                   finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
               }
           }
 
-          // Clean up chat bubbles separators
+          // Clean up chat bubbles separators if present
           finalContent = finalContent.split('|||').join('\n').trim();
 
           if (finalContent) {
@@ -303,15 +306,18 @@ export default function App() {
       }
   };
 
-  // Agent Executor
+  // Agent Executor (Protocol Handler)
   const executeAgentAction = (action: any) => {
+      console.log("Agent executing:", action);
       try {
           switch (action.type) {
               case 'create_task':
+                  // Pass action.completed if provided
                   addTask(action.title, action.date, action.tag, action.completed || false);
                   break;
               case 'update_task':
               case 'complete_task':
+                  // Fixed potential reference error using action.id
                   updateTask(action.id, action.action === 'complete_task' ? { completed: true } : action);
                   break;
               case 'delete_task':
@@ -360,6 +366,7 @@ export default function App() {
       const historyLimit = settings.historyLimit || 20;
       let currentMessages = [...messages];
 
+      // Regeneration Logic: Remove ALL AI messages from the last turn
       if (regenerate) {
           let lastUserIndex = -1;
           for (let i = currentMessages.length - 1; i >= 0; i--) {
@@ -368,46 +375,66 @@ export default function App() {
                   break;
               }
           }
+          
           if (lastUserIndex !== -1) {
+              // Keep messages up to and including the last user message
               currentMessages = currentMessages.slice(0, lastUserIndex + 1);
-              setMessages(currentMessages);
+              setMessages(currentMessages); // Visual update
           }
       }
 
       const recentHistory = currentMessages.slice(-historyLimit);
+      
       const response = await generateResponse(activePreset, settings.aiName, recentHistory, appState, "");
       const candidate = response.candidates?.[0];
       const modelContent = candidate?.content;
       
       if (!modelContent) throw new Error("No content");
 
+      // Check for JSON Protocol (The Agent "Brain") inside text
       const rawText = modelContent.parts?.map((p: any) => p.text).join('') || "";
+      
       let displayText = rawText;
+      let agentActions: any[] = [];
 
       const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
+      
       if (jsonMatch) {
           try {
               const jsonContent = JSON.parse(jsonMatch[1]);
               if (jsonContent.actions && Array.isArray(jsonContent.actions)) {
-                  jsonContent.actions.forEach((action: any) => executeAgentAction(action));
+                  agentActions = jsonContent.actions;
+                  
+                  // Execute Agent Actions
+                  agentActions.forEach(action => executeAgentAction(action));
+
+                  // Clean the text for display (Remove the JSON block)
                   displayText = rawText.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
-                  if (!displayText) displayText = "已为您更新日程。";
+                  
+                  if (!displayText) {
+                      displayText = "已为您更新日程。";
+                  }
               }
           } catch (e) {
               console.error("Failed to parse Agent JSON", e);
           }
       }
 
+      // Sequential bubble display with human-like delay
       const bubbles = displayText.split('|||').map(s => s.trim()).filter(s => s);
       
-      // Sequential bubble display with human-like delay
+      // Initial thought delay
+      if (bubbles.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 400));
+      }
+
       for (let i = 0; i < bubbles.length; i++) {
           const b = bubbles[i];
           setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
           
-          // Don't wait after the last bubble
+          // Add delay between bubbles if there's more than one
           if (i < bubbles.length - 1) {
-              const delay = 600 + Math.random() * 800; // Human-like rhythm
+              const delay = 800 + Math.random() * 1000; // Slightly more pronounced rhythm (0.8s to 1.8s)
               await new Promise(resolve => setTimeout(resolve, delay));
           }
       }
