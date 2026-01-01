@@ -262,6 +262,16 @@ export default function App() {
       return response.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || "";
   };
 
+  const handleGenerateQuote = async () => {
+      try {
+          const prompt = "请生成一句简短（30字以内）、可爱、温暖且励志的中文语录，必须包含可爱的颜文字(如 (｡♥‿♥｡) )或Emoji，让人看了心情变好。直接返回句子，不要任何解释。";
+          const result = await callAI(prompt);
+          return result.replace(/```.*?```/g, '').trim(); 
+      } catch (e) {
+          return "今天也是充满可能的一天 (ง •_•)ง"; 
+      }
+  };
+
   const handleGenerateSummary = async (date: string) => {
       const activePreset = getActivePreset();
       if (!activePreset || !activePreset.apiKey) { setIsSettingsOpen(true); return; }
@@ -494,6 +504,7 @@ export default function App() {
                   onToggleTask={(id) => { const t = appState.tasks.find(x => x.id === id); if(t) updateTask(id, { completed: !t.completed }); }}
                   onAddTask={addTask}
                   onGenerateSummary={() => handleGenerateSummary(new Date().toLocaleDateString('en-CA'))}
+                  onGetQuote={handleGenerateQuote}
                   goToDailyReview={() => setCurrentView(ViewMode.DAILY_REVIEW)}
                 />
               )}

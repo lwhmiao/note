@@ -8,6 +8,7 @@ interface DashboardProps {
   onToggleTask: (id: string) => void;
   onAddTask: (title: string, date: string) => void;
   onGenerateSummary: () => void;
+  onGetQuote: () => Promise<string>;
   goToDailyReview: () => void;
 }
 
@@ -24,10 +25,11 @@ const QUOTES = [
     "允许一切发生，拥抱每一个当下。"
 ];
 
-export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAddTask, onGenerateSummary, goToDailyReview }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAddTask, onGenerateSummary, onGetQuote, goToDailyReview }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [currentQuote, setCurrentQuote] = useState(QUOTES[0]);
+  const [isQuoteLoading, setIsQuoteLoading] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const todayTasks = state.tasks.filter(t => t.date === today);
@@ -55,26 +57,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
     setIsAddingTask(false);
   };
 
-  const refreshQuote = () => {
-      let newIndex;
-      do {
-          newIndex = Math.floor(Math.random() * QUOTES.length);
-      } while (newIndex === quoteIndex && QUOTES.length > 1);
-      setQuoteIndex(newIndex);
+  const refreshQuote = async () => {
+      setIsQuoteLoading(true);
+      try {
+          const newQuote = await onGetQuote();
+          if (newQuote) {
+              setCurrentQuote(newQuote);
+          }
+      } catch (e) {
+          // Fallback to static if fail
+          let newIndex = Math.floor(Math.random() * QUOTES.length);
+          setCurrentQuote(QUOTES[newIndex]);
+      } finally {
+          setIsQuoteLoading(false);
+      }
   };
 
   return (
     <div className="p-8 max-w-6xl mx-auto h-full overflow-y-auto bg-texture">
       <header className="mb-10 mt-4">
         <h1 className="text-5xl font-display font-bold text-notion-text mb-3 tracking-tight">{getGreeting()}</h1>
-        <div className="flex items-center gap-2 group">
-            <p className="text-notion-dim text-lg">{QUOTES[quoteIndex]}</p>
+        <div className="flex items-center gap-2 group min-h-[28px]">
+            <p className={`text-notion-dim text-lg transition-opacity duration-300 ${isQuoteLoading ? 'opacity-50' : 'opacity-100'}`}>
+                {currentQuote}
+            </p>
             <button 
                 onClick={refreshQuote}
-                className="p-1.5 rounded-full text-notion-dim/50 hover:bg-notion-hover hover:text-notion-text transition-colors opacity-0 group-hover:opacity-100"
+                disabled={isQuoteLoading}
+                className="p-1.5 rounded-full text-notion-dim/50 hover:bg-notion-hover hover:text-notion-text transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-0"
                 title="刷新语录"
             >
-                <RefreshCw size={14} />
+                <RefreshCw size={14} className={isQuoteLoading ? 'animate-spin' : ''} />
             </button>
         </div>
       </header>

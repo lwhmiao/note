@@ -319,7 +319,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-notion-bg flex flex-col" style={{ 
+    <div className="fixed inset-0 z-[60] bg-notion-bg flex flex-col overflow-x-hidden" style={{ 
         backgroundImage: settings.chatBackgroundImageUrl ? `url(${settings.chatBackgroundImageUrl})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center'
