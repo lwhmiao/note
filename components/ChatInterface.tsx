@@ -187,10 +187,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       alert("已复制");
   };
 
-  const cssTemplate = `/* 示例：我的气泡变蓝 */
-.chat-message-row:not(.chat-message-row:has(.bg-white)) .chat-bubble {
-  background-color: #3b82f6 !important; 
-  color: white !important;
+  const cssTemplate = `/* 自定义样式示例 */
+.chat-bubble-ai { 
+  background-color: #ffffff !important; 
+  color: #050505 !important; 
+}
+.chat-bubble-user { 
+  background-color: var(--color-accent-text) !important; 
+  color: #ffffff !important; 
 }`;
 
   if (!isOpen) {
@@ -203,7 +207,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
             onClick={handleClick}
-            className="w-14 h-14 bg-notion-accentText text-white rounded-full shadow-float flex items-center justify-center hover:scale-105 transition-transform cursor-grab active:cursor-grabbing group relative"
+            className="w-14 h-14 bg-notion-accentText text-white rounded-full shadow-soft flex items-center justify-center hover:scale-105 transition-transform cursor-grab active:cursor-grabbing group relative"
           >
             <Sparkles size={24} className="group-hover:rotate-12 transition-transform" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse border border-white" />
@@ -315,7 +319,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-notion-bg flex flex-col animate-in slide-in-from-bottom-4 duration-300 overflow-x-hidden" style={{ 
+    <div className="fixed inset-0 z-[60] bg-notion-bg flex flex-col" style={{ 
         backgroundImage: settings.chatBackgroundImageUrl ? `url(${settings.chatBackgroundImageUrl})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center'
@@ -327,7 +331,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <img src={settings.aiAvatarUrl} alt="AI" className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" />
           <div className="flex flex-col">
              {isLoading ? (
-                 <span className="font-display font-bold text-lg text-notion-accentText animate-pulse">对方正在输入...</span>
+                 <span className="font-display font-bold text-lg text-notion-accentText">对方正在输入...</span>
              ) : (
                  <span className="font-display font-bold text-lg text-notion-text">{settings.aiName}</span>
              )}
@@ -364,7 +368,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div key={msg.id} className={`flex items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} chat-message-row group relative`}>
                <img src={avatar} className="w-12 h-12 rounded-full object-cover border border-white shadow-sm mb-1 bg-white shrink-0" />
                
-               <div className={`relative flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
+               <div className={`relative flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'} max-w-[80%] md:max-w-[60%]`}>
                   
                   {isActive && (
                       <div 
@@ -405,9 +409,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                              else setActiveMenuId(msg.id);
                         }}
                         className={`rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm chat-bubble break-words break-all whitespace-pre-wrap select-text cursor-pointer transition-all ${
-                        isUser ? 'bg-notion-accentText text-white rounded-br-sm' : 
+                        isUser ? 'bg-notion-accentText text-white rounded-br-sm chat-bubble-user' : 
                         msg.isError ? 'bg-red-50 text-red-600 border border-red-100' : 
-                        'bg-white text-notion-text border border-notion-border rounded-bl-sm'
+                        'bg-white text-notion-text border border-notion-border rounded-bl-sm chat-bubble-ai'
                     } ${isActive ? 'ring-2 ring-offset-2 ring-notion-accentText/50 scale-[1.02]' : 'hover:scale-[1.01]'}`}>
                     {msg.text}
                     </div>
@@ -416,14 +420,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           );
         })}
-        {isLoading && (
-           <div className="flex items-end gap-3">
-              <img src={settings.aiAvatarUrl} className="w-12 h-12 rounded-full object-cover border border-white shadow-sm mb-1 bg-white" />
-              <div className="bg-white px-5 py-3 rounded-2xl rounded-bl-sm border border-notion-border shadow-sm flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin text-notion-accentText" />
-              </div>
-           </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
