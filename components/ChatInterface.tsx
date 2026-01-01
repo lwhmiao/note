@@ -50,6 +50,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const settingsContainerRef = useRef<HTMLDivElement>(null);
 
   const displayMessages = messages.filter(m => m.role === 'user' || m.role === 'model' || (m.role === 'system' && m.isError));
   
@@ -57,16 +58,47 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Check if we should show regenerate button (last message is User OR last message is AI)
   const canRegenerate = displayMessages.length > 0 && !isLoading;
 
+  const wasOpenRef = useRef(isOpen);
+  const wasSettingsRef = useRef(showSettings);
+
   useEffect(() => {
     if (showSettings) setTempSettings(settings);
   }, [showSettings, settings]);
 
-  // Use layout effect for smooth scroll
+  // Use layout effect for robust scroll control
   useLayoutEffect(() => {
-    if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isOpen, showSettings]);
+     const prevOpen = wasOpenRef.current;
+     const prevSettings = wasSettingsRef.current;
+     
+     if (showSettings) {
+         // Entering Settings -> Top
+         if (!prevSettings && settingsContainerRef.current) {
+             settingsContainerRef.current.scrollTop = 0;
+         }
+     } else if (isOpen) {
+         // Chat View Logic
+         const scrollContainer = scrollContainerRef.current;
+         if (scrollContainer) {
+             const isOpening = isOpen && !prevOpen;
+             const isReturningFromSettings = !showSettings && prevSettings;
+             
+             // Instant scroll on mount/return
+             if (isOpening || isReturningFromSettings) {
+                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
+             } else {
+                 // Smooth scroll only on updates while already active
+                 // We rely on dependencies: if messages changed, this runs.
+                 if (!isOpening && !isReturningFromSettings) {
+                    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                 }
+             }
+         }
+     }
+     
+     // Update history refs
+     wasOpenRef.current = isOpen;
+     wasSettingsRef.current = showSettings;
+  }, [isOpen, showSettings, messages]);
 
   useEffect(() => {
      if (settings.customCss) {
@@ -225,7 +257,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
              <button onClick={() => setShowSettings(false)} className="text-notion-dim hover:text-notion-text p-2 bg-notion-sidebar rounded-full"><X size={20}/></button>
            </div>
            
-           <div className="flex-1 overflow-y-auto p-6 space-y-8 max-w-3xl mx-auto w-full">
+           <div ref={settingsContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 max-w-3xl mx-auto w-full">
               <section className="space-y-6 bg-white p-6 rounded-3xl shadow-sm border border-notion-border">
                  <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Bot size={14}/> AI 角色设定</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
