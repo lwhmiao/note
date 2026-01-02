@@ -41,7 +41,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
-  const longPressTimer = useRef<any>(null);
 
   // Draggable State
   const [position, setPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
@@ -63,37 +62,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (showSettings) setTempSettings(settings);
   }, [showSettings, settings]);
 
-  // Critical: Scroll Position Logic
-  const scrollToBottom = () => {
+  // --- Scroll Logic ---
+  const scrollToBottom = (instant = true) => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: instant ? 'auto' : 'smooth'
+      });
     }
   };
 
+  // Initial scroll on open / view change
   useLayoutEffect(() => {
     if (isOpen) {
       if (showSettings) {
-        // Goal: Settings start at top
+        // Reset Settings scroll to top
         if (settingsContainerRef.current) {
           settingsContainerRef.current.scrollTop = 0;
         }
       } else {
-        // Goal: Chat starts at bottom instantly
-        scrollToBottom();
-        
-        // Safety: Retry scrolling to catch any layout shifts (e.g., images loading) on first render
-        requestAnimationFrame(scrollToBottom);
-        setTimeout(scrollToBottom, 50);
-        setTimeout(scrollToBottom, 150);
+        // Chat scroll to bottom (Instant)
+        scrollToBottom(true);
+        // Retry to catch layout shifts
+        const timer = setTimeout(() => scrollToBottom(true), 50);
+        return () => clearTimeout(timer);
       }
     }
   }, [isOpen, showSettings]); 
 
-  // Smooth scroll only on new messages while view is stable
+  // Smooth scroll on new messages
   useEffect(() => {
-    if (isOpen && !showSettings && messagesEndRef.current) {
-        // We only smooth scroll if the user is already looking at the chat
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (isOpen && !showSettings) {
+        // Only smooth scroll if we are already open
+        scrollToBottom(false);
     }
   }, [messages]);
 
@@ -491,7 +492,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
                     rows={1}
-                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32"
+                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm leading-[20px] outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32 min-h-[44px]"
                     disabled={isLoading}
                 />
                 
