@@ -479,7 +479,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             )}
             
-            <div className="flex-1 bg-notion-sidebar rounded-xl flex items-center gap-1 p-1.5 transition-all focus-within:ring-2 focus-within:ring-notion-accentText/20">
+            <div className="flex-1 bg-notion-sidebar rounded-xl flex items-center gap-2 p-1.5 transition-all focus-within:ring-2 focus-within:ring-notion-accentText/20">
                 <label className="flex-shrink-0 p-2 rounded-lg text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer transition-colors" title="上传图片">
                     <ImageIcon size={20} />
                     <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
@@ -492,11 +492,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
                     rows={1}
-                    className="flex-1 bg-transparent border-none outline-none text-sm leading-[20px] text-notion-text placeholder:text-notion-dim/70 resize-none overflow-y-auto max-h-32 min-h-[40px] py-2 px-1"
+                    className="flex-1 bg-transparent border-none outline-none text-sm leading-relaxed text-notion-text placeholder:text-notion-dim/70 resize-none overflow-y-auto max-h-32 py-2 px-1"
                     disabled={isLoading}
                 />
                 
-                <div className="flex gap-1 shrink-0">
+                <div className="flex gap-1 shrink-0 items-center">
                     {canRegenerate && (
                          <button
                             type="button"
