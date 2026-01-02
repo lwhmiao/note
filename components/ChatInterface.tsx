@@ -198,8 +198,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onloadend = () => setPendingImage(reader.result as string);
+    reader.onloadend = () => {
+        // Directly post the image without waiting for preview mount
+        onUserPost(input, reader.result as string);
+        setInput('');
+        setPendingImage(null);
+    };
     reader.readAsDataURL(file);
+    // Reset file input to allow selecting same file again
+    e.target.value = '';
   };
 
   const handleEditStart = (msg: ChatMessage) => {
