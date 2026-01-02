@@ -63,20 +63,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (showSettings) setTempSettings(settings);
   }, [showSettings, settings]);
 
-  // Instant scroll on mount (Open Chat OR Return from Settings)
-  // We include showSettings and isOpen to ensure this fires every time the chat view becomes visible
+  // Critical: Scroll Position Logic
+  // useLayoutEffect runs synchronously after DOM mutations but before paint.
   useLayoutEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    if (isOpen) {
+      if (showSettings) {
+        // Goal: Settings start at top
+        if (settingsContainerRef.current) {
+          settingsContainerRef.current.scrollTop = 0;
+        }
+      } else {
+        // Goal: Chat starts at bottom instantly
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }
     }
-  }, [showSettings, isOpen]); 
+  }, [isOpen, showSettings]); 
 
-  // Smooth scroll only on new messages
-  // We use a separate effect for this to distinguish between "view loaded" (instant) and "new message" (smooth)
+  // Smooth scroll only on new messages while view is stable
   useEffect(() => {
-    // Only scroll if we are not in the initial render phase
-    // This is a simple check: if the scroll is already at bottom (due to layout effect), smooth scroll does nothing visually.
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isOpen && !showSettings && messagesEndRef.current) {
+        // We only smooth scroll if the user is already looking at the chat
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -460,7 +470,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             )}
             
-            <label className="p-3 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer transition-colors text-notion-dim hover:text-notion-accentText self-end">
+            <label className="flex-shrink-0 w-11 h-11 flex items-center justify-center p-0 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer transition-colors text-notion-dim hover:text-notion-accentText">
                 <ImageIcon size={20} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
             </label>
@@ -473,11 +483,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
                     rows={1}
-                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32"
+                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32 min-h-[44px]"
                     disabled={isLoading}
                 />
                 
-                <div className="absolute right-2 bottom-2.5 flex gap-1">
+                <div className="absolute right-2 bottom-1.5 flex gap-1">
                     {canRegenerate && (
                          <button
                             type="button"
