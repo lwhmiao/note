@@ -18,6 +18,17 @@ const initialState: AppState = {
   summaries: []
 };
 
+const DEFAULT_QUOTES = [
+    "今天也是充满可能的一天 (ง •_•)ง",
+    "慢慢来，比较快 (｡♥‿♥｡)",
+    "保持热爱，奔赴山海 ✨",
+    "生活明朗，万物可爱 🌈",
+    "咸鱼翻身... 还是咸鱼 _(:з」∠)_",
+    "间歇性踌躇满志，持续性混吃等死 🌚",
+    "允许一切发生，拥抱每一个当下 🌿",
+    "虽然辛苦，但我还是会选择那种滚烫的人生 🔥"
+];
+
 // Theme Definitions - Ultra High Contrast Text
 const THEMES: Record<ThemeId, Record<string, string>> = {
     sakura: {
@@ -98,6 +109,12 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
   
+  const [quoteStr, setQuoteStr] = useState<string>(() => {
+      const saved = localStorage.getItem('lifeos_quote');
+      if (saved) return saved;
+      return DEFAULT_QUOTES[Math.floor(Math.random() * DEFAULT_QUOTES.length)];
+  });
+
   const [currentView, setCurrentView] = useState<ViewMode>(ViewMode.DASHBOARD);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -250,6 +267,8 @@ export default function App() {
   const handleResetData = () => {
       setAppState(initialState);
       setMessages([]);
+      setQuoteStr(DEFAULT_QUOTES[0]);
+      localStorage.removeItem('lifeos_quote');
   };
   
   const getActivePreset = () => settings.presets.find(p => p.id === settings.activePresetId);
@@ -262,13 +281,16 @@ export default function App() {
       return response.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || "";
   };
 
-  const handleGenerateQuote = async () => {
+  const handleRefreshQuote = async () => {
       try {
-          const prompt = "请生成一句简短（30字以内）、可爱、温暖且励志的中文语录，必须包含可爱的颜文字(如 (｡♥‿♥｡) )或Emoji，让人看了心情变好。直接返回句子，不要任何解释。";
+          const prompt = "请生成一句简短（30字以内）的中文语录。风格随机：可以是治愈系、励志的、幽默搞怪的、或者“毒鸡汤”（丧一点但真实的）。必须包含颜文字或Emoji。直接返回句子，不要解释。";
           const result = await callAI(prompt);
-          return result.replace(/```.*?```/g, '').trim(); 
+          const cleanQuote = result.replace(/```.*?```/g, '').trim(); 
+          setQuoteStr(cleanQuote);
+          localStorage.setItem('lifeos_quote', cleanQuote);
       } catch (e) {
-          return "今天也是充满可能的一天 (ง •_•)ง"; 
+          const fallback = DEFAULT_QUOTES[Math.floor(Math.random() * DEFAULT_QUOTES.length)];
+          setQuoteStr(fallback);
       }
   };
 
@@ -504,7 +526,8 @@ export default function App() {
                   onToggleTask={(id) => { const t = appState.tasks.find(x => x.id === id); if(t) updateTask(id, { completed: !t.completed }); }}
                   onAddTask={addTask}
                   onGenerateSummary={() => handleGenerateSummary(new Date().toLocaleDateString('en-CA'))}
-                  onGetQuote={handleGenerateQuote}
+                  quoteStr={quoteStr}
+                  onRefreshQuote={handleRefreshQuote}
                   goToDailyReview={() => setCurrentView(ViewMode.DAILY_REVIEW)}
                 />
               )}

@@ -8,27 +8,14 @@ interface DashboardProps {
   onToggleTask: (id: string) => void;
   onAddTask: (title: string, date: string) => void;
   onGenerateSummary: () => void;
-  onGetQuote: () => Promise<string>;
+  quoteStr: string;
+  onRefreshQuote: () => Promise<void>;
   goToDailyReview: () => void;
 }
 
-const QUOTES = [
-    "今天也是充满可能的一天。",
-    "慢慢来，比较快。",
-    "保持热爱，奔赴山海。",
-    "生活明朗，万物可爱。",
-    "且停且忘且随风，且行且看且从容。",
-    "即使是微小的进步，也是成长的足迹。",
-    "你比想象中更强大。",
-    "好好生活，慢慢相遇。",
-    "此时此刻，就是最好的时刻。",
-    "允许一切发生，拥抱每一个当下。"
-];
-
-export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAddTask, onGenerateSummary, onGetQuote, goToDailyReview }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAddTask, onGenerateSummary, quoteStr, onRefreshQuote, goToDailyReview }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [currentQuote, setCurrentQuote] = useState(QUOTES[0]);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
@@ -60,14 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
   const refreshQuote = async () => {
       setIsQuoteLoading(true);
       try {
-          const newQuote = await onGetQuote();
-          if (newQuote) {
-              setCurrentQuote(newQuote);
-          }
-      } catch (e) {
-          // Fallback to static if fail
-          let newIndex = Math.floor(Math.random() * QUOTES.length);
-          setCurrentQuote(QUOTES[newIndex]);
+          await onRefreshQuote();
       } finally {
           setIsQuoteLoading(false);
       }
@@ -79,7 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
         <h1 className="text-5xl font-display font-bold text-notion-text mb-3 tracking-tight">{getGreeting()}</h1>
         <div className="flex items-center gap-2 group min-h-[28px]">
             <p className={`text-notion-dim text-lg transition-opacity duration-300 ${isQuoteLoading ? 'opacity-50' : 'opacity-100'}`}>
-                {currentQuote}
+                {quoteStr}
             </p>
             <button 
                 onClick={refreshQuote}

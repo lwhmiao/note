@@ -51,6 +51,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const settingsContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const displayMessages = messages.filter(m => m.role === 'user' || m.role === 'model' || (m.role === 'system' && m.isError));
   
@@ -58,47 +59,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Check if we should show regenerate button (last message is User OR last message is AI)
   const canRegenerate = displayMessages.length > 0 && !isLoading;
 
-  const wasOpenRef = useRef(isOpen);
-  const wasSettingsRef = useRef(showSettings);
-
   useEffect(() => {
     if (showSettings) setTempSettings(settings);
   }, [showSettings, settings]);
 
-  // Use layout effect for robust scroll control
+  // Instant scroll on mount (Open Chat OR Return from Settings)
   useLayoutEffect(() => {
-     const prevOpen = wasOpenRef.current;
-     const prevSettings = wasSettingsRef.current;
-     
-     if (showSettings) {
-         // Entering Settings -> Top
-         if (!prevSettings && settingsContainerRef.current) {
-             settingsContainerRef.current.scrollTop = 0;
-         }
-     } else if (isOpen) {
-         // Chat View Logic
-         const scrollContainer = scrollContainerRef.current;
-         if (scrollContainer) {
-             const isOpening = isOpen && !prevOpen;
-             const isReturningFromSettings = !showSettings && prevSettings;
-             
-             // Instant scroll on mount/return
-             if (isOpening || isReturningFromSettings) {
-                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
-             } else {
-                 // Smooth scroll only on updates while already active
-                 // We rely on dependencies: if messages changed, this runs.
-                 if (!isOpening && !isReturningFromSettings) {
-                    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-                 }
-             }
-         }
-     }
-     
-     // Update history refs
-     wasOpenRef.current = isOpen;
-     wasSettingsRef.current = showSettings;
-  }, [isOpen, showSettings, messages]);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, []); // Run on mount
+
+  // Smooth scroll on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
      if (settings.customCss) {
@@ -112,6 +87,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
          styleEl.textContent = settings.customCss;
      }
   }, [settings.customCss]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   // --- Drag Logic ---
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
@@ -160,6 +143,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     onUserPost(input, pendingImage || undefined);
     setInput('');
     setPendingImage(null);
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSubmit(e);
+      }
   };
 
   const handleSaveSettings = () => {
@@ -293,7 +283,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </div>
                     </div>
                  </div>
-                 <input className="w-full p-3 rounded-xl bg-notion-sidebar border-none text-sm" value={tempSettings.userPersona} onChange={e => setTempSettings({...tempSettings, userPersona: e.target.value})}/>
+                 <textarea className="w-full p-4 rounded-xl bg-notion-sidebar border-none text-sm h-24 resize-none" value={tempSettings.userPersona} onChange={e => setTempSettings({...tempSettings, userPersona: e.target.value})}/>
               </section>
 
               <section className="space-y-6 bg-white p-6 rounded-3xl shadow-sm border border-notion-border">
@@ -466,22 +456,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             )}
             
-            <label className="p-3 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer transition-colors text-notion-dim hover:text-notion-accentText">
+            <label className="p-3 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer transition-colors text-notion-dim hover:text-notion-accentText self-end">
                 <ImageIcon size={20} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
             </label>
 
             <div className="flex-1 relative">
-                <input
-                    type="text"
+                <textarea
+                    ref={textareaRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
-                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text"
+                    rows={1}
+                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32"
                     disabled={isLoading}
                 />
                 
-                <div className="absolute right-2 top-1.5 flex gap-1">
+                <div className="absolute right-2 bottom-2.5 flex gap-1">
                     {canRegenerate && (
                          <button
                             type="button"
