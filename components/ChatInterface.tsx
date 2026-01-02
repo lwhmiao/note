@@ -471,7 +471,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Input */}
       <div className="relative z-10 p-4 border-t border-notion-border bg-white/90 backdrop-blur-md flex justify-center">
          
-         <form onSubmit={handleSubmit} className="relative w-full max-w-4xl flex items-end gap-2">
+         <form onSubmit={handleSubmit} className="relative w-full max-w-4xl flex items-end">
             {pendingImage && (
                 <div className="absolute bottom-full left-0 mb-4 p-2 bg-white rounded-xl shadow-lg border border-notion-border animate-in slide-in-from-bottom-2">
                     <img src={pendingImage} className="h-16 w-auto rounded-lg" />
@@ -479,11 +479,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             )}
             
-            <label className="flex-shrink-0 w-11 h-11 flex items-center justify-center p-0 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer transition-colors text-notion-dim hover:text-notion-accentText">
-                <ImageIcon size={20} />
-                <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
-            </label>
-
             <div className="flex-1 relative">
                 <textarea
                     ref={textareaRef}
@@ -492,10 +487,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
                     rows={1}
-                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm leading-[20px] outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32 min-h-[44px]"
+                    className="w-full pl-12 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm leading-[20px] outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32 min-h-[44px]"
                     disabled={isLoading}
                 />
                 
+                <label className="absolute left-2 bottom-1.5 p-1.5 rounded-lg transition-all text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer" title="上传图片">
+                    <ImageIcon size={20} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
+                </label>
+
                 <div className="absolute right-2 bottom-1.5 flex gap-1">
                     {canRegenerate && (
                          <button
