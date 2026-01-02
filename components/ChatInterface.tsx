@@ -479,7 +479,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             )}
             
-            <div className="flex-1 relative">
+            <div className="flex-1 bg-notion-sidebar rounded-xl flex items-center gap-1 p-1.5 transition-all focus-within:ring-2 focus-within:ring-notion-accentText/20">
+                <label className="flex-shrink-0 p-2 rounded-lg text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer transition-colors" title="上传图片">
+                    <ImageIcon size={20} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
+                </label>
+
                 <textarea
                     ref={textareaRef}
                     value={input}
@@ -487,22 +492,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
                     rows={1}
-                    className="w-full pl-12 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm leading-[20px] outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32 min-h-[44px]"
+                    className="flex-1 bg-transparent border-none outline-none text-sm leading-[20px] text-notion-text placeholder:text-notion-dim/70 resize-none overflow-y-auto max-h-32 min-h-[40px] py-2 px-1"
                     disabled={isLoading}
                 />
                 
-                <label className="absolute left-2 bottom-1.5 p-1.5 rounded-lg transition-all text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer" title="上传图片">
-                    <ImageIcon size={20} />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
-                </label>
-
-                <div className="absolute right-2 bottom-1.5 flex gap-1">
+                <div className="flex gap-1 shrink-0">
                     {canRegenerate && (
                          <button
                             type="button"
                             onClick={() => onTriggerAI(true)}
                             disabled={isLoading}
-                            className={`p-1.5 rounded-lg transition-all text-notion-dim hover:bg-white hover:text-notion-accentText`}
+                            className="p-2 rounded-lg transition-all text-notion-dim hover:bg-white hover:text-notion-accentText"
                             title="重新生成回复"
                          >
                             <RotateCw size={18} />
@@ -513,7 +513,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         type="button"
                         onClick={() => onTriggerAI(false)}
                         disabled={isLoading}
-                        className={`p-1.5 rounded-lg transition-all ${lastMessageIsUser && !isLoading ? 'bg-notion-accentText text-white shadow-sm hover:opacity-90' : 'text-notion-dim hover:bg-white hover:text-notion-text opacity-50'}`}
+                        className={`p-2 rounded-lg transition-all ${lastMessageIsUser && !isLoading ? 'bg-notion-accentText text-white shadow-sm hover:opacity-90' : 'text-notion-dim hover:bg-white hover:text-notion-text opacity-50'}`}
                         title="让 AI 回复"
                     >
                         <Bot size={18} />
@@ -522,7 +522,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                    <button
                         type="submit"
                         disabled={(!input.trim() && !pendingImage) || isLoading}
-                        className="p-1.5 text-notion-dim hover:bg-white hover:text-notion-text rounded-lg transition-all disabled:opacity-30"
+                        className="p-2 text-notion-dim hover:bg-white hover:text-notion-text rounded-lg transition-all disabled:opacity-30"
                         title="发送消息"
                     >
                         <Send size={18} />
