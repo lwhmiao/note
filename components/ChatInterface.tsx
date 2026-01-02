@@ -197,6 +197,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleChatImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // NOTE: Removed size limit check as requested.
+    
     const reader = new FileReader();
     reader.onloadend = () => {
         // Directly post the image without waiting for preview mount
@@ -427,16 +430,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         className={`absolute ${index === 0 ? 'top-full mt-2' : 'bottom-full mb-2'} z-20 bg-notion-dark text-white rounded-xl shadow-float flex items-center p-1.5 gap-1 animate-in zoom-in-95 fade-in duration-200 ${isUser ? 'right-0' : 'left-0'}`}
                         onClick={e => { e.stopPropagation(); }}
                       >
-                         <button type="button" onClick={(e) => handleCopyText(e, msg.text || "")} className="p-2 hover:bg-white/20 rounded-lg" title="复制"><Copy size={14}/></button>
-                         <div className="w-px h-3 bg-white/20"></div>
-                         <button type="button" onClick={(e) => { e.stopPropagation(); handleEditStart(msg); }} className="p-2 hover:bg-white/20 rounded-lg" title="编辑"><Edit3 size={14}/></button>
-                         <div className="w-px h-3 bg-white/20"></div>
+                         {/* Only show Copy/Edit if text exists */}
+                         {msg.text && (
+                             <>
+                                <button type="button" onClick={(e) => handleCopyText(e, msg.text || "")} className="p-2 hover:bg-white/20 rounded-lg" title="复制"><Copy size={14}/></button>
+                                <div className="w-px h-3 bg-white/20"></div>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEditStart(msg); }} className="p-2 hover:bg-white/20 rounded-lg" title="编辑"><Edit3 size={14}/></button>
+                                <div className="w-px h-3 bg-white/20"></div>
+                             </>
+                         )}
                          <button type="button" onClick={(e) => handleDelete(e, msg.id)} className="p-2 hover:bg-red-500/50 text-red-300 hover:text-white rounded-lg" title="删除"><Trash2 size={14}/></button>
                       </div>
                   )}
 
                   {msg.image && (
-                      <img src={msg.image} className="max-w-[200px] rounded-xl border border-notion-border shadow-sm mb-1" />
+                      <img 
+                          src={msg.image} 
+                          className="max-w-[200px] rounded-xl border border-notion-border shadow-sm mb-1 cursor-pointer" 
+                          onClick={(e) => { 
+                               e.stopPropagation(); 
+                               if (isActive) setActiveMenuId(null);
+                               else setActiveMenuId(msg.id);
+                          }}
+                      />
                   )}
                   
                   {isEditingThis ? (
@@ -487,7 +503,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
             
             <div className="flex-1 bg-notion-sidebar rounded-xl flex items-center gap-2 p-1.5 transition-all focus-within:ring-2 focus-within:ring-notion-accentText/20">
-                <label className="flex-shrink-0 p-2 rounded-lg text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer transition-colors" title="上传图片">
+                <label className="flex-shrink-0 p-2 rounded-lg text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer transition-colors flex items-center justify-center" title="上传图片">
                     <ImageIcon size={20} />
                     <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
                 </label>
