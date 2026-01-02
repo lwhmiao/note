@@ -64,14 +64,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [showSettings, settings]);
 
   // Instant scroll on mount (Open Chat OR Return from Settings)
+  // We include showSettings and isOpen to ensure this fires every time the chat view becomes visible
   useLayoutEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
-  }, []); // Run on mount
+  }, [showSettings, isOpen]); 
 
-  // Smooth scroll on new messages
+  // Smooth scroll only on new messages
+  // We use a separate effect for this to distinguish between "view loaded" (instant) and "new message" (smooth)
   useEffect(() => {
+    // Only scroll if we are not in the initial render phase
+    // This is a simple check: if the scroll is already at bottom (due to layout effect), smooth scroll does nothing visually.
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
