@@ -64,7 +64,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [showSettings, settings]);
 
   // Critical: Scroll Position Logic
-  // useLayoutEffect runs synchronously after DOM mutations but before paint.
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  };
+
   useLayoutEffect(() => {
     if (isOpen) {
       if (showSettings) {
@@ -74,9 +79,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
       } else {
         // Goal: Chat starts at bottom instantly
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-        }
+        scrollToBottom();
+        
+        // Safety: Retry scrolling to catch any layout shifts (e.g., images loading) on first render
+        requestAnimationFrame(scrollToBottom);
+        setTimeout(scrollToBottom, 50);
+        setTimeout(scrollToBottom, 150);
       }
     }
   }, [isOpen, showSettings]); 
@@ -483,7 +491,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onKeyDown={handleKeyDown}
                     placeholder={`发送给 ${settings.aiName}...`}
                     rows={1}
-                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32 min-h-[44px]"
+                    className="w-full pl-4 pr-24 py-3 bg-notion-sidebar rounded-xl border-none focus:ring-2 focus:ring-notion-accentText/20 text-sm outline-none transition-all placeholder:text-notion-dim/70 text-notion-text resize-none overflow-y-auto max-h-32"
                     disabled={isLoading}
                 />
                 
