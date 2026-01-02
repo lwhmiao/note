@@ -149,7 +149,9 @@ export const generateResponse = async (
     const parts: any[] = [];
     if (msg.text) parts.push({ text: msg.text });
     if (msg.image) {
-         parts.push({ inlineData: { mimeType: "image/jpeg", data: msg.image.split(',')[1] } });
+         // Fix: Extract MIME type from data URL instead of hardcoding image/jpeg
+         const mimeType = msg.image.match(/^data:(.*?);base64,/)?.[1] || "image/jpeg";
+         parts.push({ inlineData: { mimeType, data: msg.image.split(',')[1] } });
     }
     return { role: 'user', parts };
   });
@@ -159,8 +161,10 @@ export const generateResponse = async (
       const currentParts: any[] = [];
       if (userMessage) currentParts.push({ text: userMessage });
       if (userImage) {
+          // Fix: Extract MIME type from data URL
+          const mimeType = userImage.match(/^data:(.*?);base64,/)?.[1] || "image/jpeg";
           const base64Data = userImage.split(',')[1];
-          currentParts.push({ inlineData: { mimeType: "image/jpeg", data: base64Data } });
+          currentParts.push({ inlineData: { mimeType, data: base64Data } });
       }
       contents.push({ role: 'user', parts: currentParts });
   }
