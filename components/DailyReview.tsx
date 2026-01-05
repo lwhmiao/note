@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { DailySummary } from '../types';
-import { Sparkles, CalendarDays, Edit3, Trash2, Check, X, RotateCw } from 'lucide-react';
+import { Sparkles, CalendarDays, Edit3, Trash2, Check, X, RotateCw, FolderOpen, Filter } from 'lucide-react';
 
 interface DailyReviewProps {
   summaries: DailySummary[];
@@ -14,26 +14,57 @@ interface DailyReviewProps {
 export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSummary, onDeleteSummary, onGenerateSummary, isGenerating }) => {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  
+  // Archive Filter State
+  const [activeMonth, setActiveMonth] = useState<string>('all');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Sort by date desc
+  const today = new Date().toISOString().split('T')[0];
+  const todaySummary = summaries.find(s => s.date === today);
+
+  // 1. Sort all by date desc
   const sortedSummaries = useMemo(() => {
      return [...summaries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [summaries]);
 
-  // Group by month for Archive view
+  // 2. Compute Available Months for Menu
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    summaries.forEach(s => {
+        if (s.date === today) return; // Skip today in archive menu
+        const date = new Date(s.date);
+        months.add(`${date.getFullYear()}年${date.getMonth() + 1}月`);
+    });
+    return Array.from(months).sort((a, b) => {
+        const parse = (s: string) => {
+            const [y, m] = s.split('年');
+            return new Date(parseInt(y), parseInt(m.replace('月','')) - 1).getTime();
+        };
+        return parse(b) - parse(a);
+    });
+  }, [summaries, today]);
+
+  // 3. Filter based on active selection
+  const filteredSummaries = useMemo(() => {
+      return sortedSummaries.filter(s => {
+          if (activeMonth === 'all') return true;
+          const date = new Date(s.date);
+          const key = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+          return key === activeMonth;
+      });
+  }, [sortedSummaries, activeMonth]);
+
+  // 4. Group by month for Archive view (Display logic)
   const grouped = useMemo(() => {
       const g: Record<string, DailySummary[]> = {};
-      sortedSummaries.forEach(s => {
+      filteredSummaries.forEach(s => {
           const key = s.date.slice(0, 7); // YYYY-MM
           if (!g[key]) g[key] = [];
           g[key].push(s);
       });
       // Sort keys descending (Newest month first)
       return Object.entries(g).sort((a, b) => b[0].localeCompare(a[0]));
-  }, [sortedSummaries]);
-
-  const today = new Date().toISOString().split('T')[0];
-  const todaySummary = summaries.find(s => s.date === today);
+  }, [filteredSummaries]);
 
   const startEditing = (summary: DailySummary) => {
       setEditingDate(summary.date);
@@ -59,7 +90,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
   };
 
   return (
-    <div className="h-full flex flex-col bg-texture p-8 overflow-y-auto">
+    <div className="h-full flex flex-col bg-texture p-8 overflow-y-auto relative">
         <header className="mb-8 flex-shrink-0">
             <h2 className="text-3xl font-display font-bold text-notion-text">每日回顾</h2>
             <p className="text-notion-dim mt-2">记录每一天的成长与感悟。</p>
@@ -109,15 +140,19 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
         </section>
 
         {/* Archive - Grouped by Month */}
-        <div className="space-y-8 pb-12 flex-1">
-            {grouped.map(([month, items]) => (
-                <div key={month}>
-                    <h4 className="flex items-center gap-2 text-notion-dim font-bold uppercase tracking-widest mb-4 text-sm sticky top-0 bg-texture/90 backdrop-blur-sm py-2 z-10">
-                        <CalendarDays size={16} /> {month}
-                    </h4>
-                    <div className="grid grid-cols-1 gap-4">
-                        {items.map(summary => (
-                            summary.date !== today && (
+        <div className="space-y-8 pb-24 flex-1">
+            {grouped.map(([month, items]) => {
+                // Filter out today from archive view again to be safe
+                const archiveItems = items.filter(i => i.date !== today);
+                if (archiveItems.length === 0) return null;
+
+                return (
+                    <div key={month}>
+                        <h4 className="flex items-center gap-2 text-notion-dim font-bold uppercase tracking-widest mb-4 text-sm sticky top-0 bg-texture/90 backdrop-blur-sm py-2 z-10">
+                            <CalendarDays size={16} /> {month}
+                        </h4>
+                        <div className="grid grid-cols-1 gap-4">
+                            {archiveItems.map(summary => (
                                 <div key={summary.date} className="bg-white p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
                                     <div className="flex justify-between items-center mb-2">
                                         <div className="text-xs font-bold text-notion-accentText">{summary.date}</div>
@@ -149,12 +184,65 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
                                         </p>
                                     )}
                                 </div>
-                            )
-                        ))}
+                            ))}
+                        </div>
                     </div>
+                );
+            })}
+            
+            {grouped.length === 0 && (
+                <div className="text-center text-notion-dim py-10 opacity-60">
+                    没有历史回顾数据。
                 </div>
-            ))}
+            )}
         </div>
+
+        {/* Bottom Floating Action Bar (Archive Menu) */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center">
+          <div className="bg-white/95 backdrop-blur-md px-1.5 py-1.5 rounded-full border border-notion-border shadow-float flex gap-2">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all min-w-[120px] ${isMenuOpen ? 'bg-notion-accent text-notion-accentText' : 'bg-transparent text-notion-text hover:bg-notion-hover'}`}
+              >
+                <FolderOpen size={18} />
+                {activeMonth === 'all' ? '全部归档' : activeMonth}
+              </button>
+          </div>
+        </div>
+
+        {/* Popover Navigation Menu */}
+        {isMenuOpen && (
+          <div 
+            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 w-64 bg-white rounded-2xl shadow-float border border-notion-border p-2 animate-in slide-in-from-bottom-2 fade-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+             <div className="max-h-[50vh] overflow-y-auto">
+                <div className="px-3 py-2 text-xs font-bold text-notion-dim uppercase tracking-wider">回顾归档</div>
+                <button
+                    onClick={() => { setActiveMonth('all'); setIsMenuOpen(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors mb-1 flex justify-between items-center ${activeMonth === 'all' ? 'bg-notion-sidebar text-notion-accentText' : 'text-notion-text hover:bg-notion-hover'}`}
+                >
+                    全部历史
+                    {activeMonth === 'all' && <Filter size={14}/>}
+                </button>
+                {availableMonths.map(m => (
+                    <button
+                        key={m}
+                        onClick={() => { setActiveMonth(m); setIsMenuOpen(false); }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-colors mb-1 ${activeMonth === m ? 'bg-notion-accent text-notion-accentText font-bold' : 'text-notion-dim hover:bg-notion-hover hover:text-notion-text'}`}
+                    >
+                        {m}
+                    </button>
+                ))}
+             </div>
+          </div>
+        )}
+      
+        {/* Overlay to close menu */}
+        {isMenuOpen && (
+            <div className="absolute inset-0 z-20" onClick={() => setIsMenuOpen(false)} />
+        )}
+
     </div>
   );
 };

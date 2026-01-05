@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Note } from '../types';
 import { Trash2, Lightbulb, StickyNote, BookOpen, Search, X, Edit3, Send, Save, Calendar, Plus, FolderOpen, Filter } from 'lucide-react';
@@ -55,7 +56,14 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
           return key === activeMonth;
       })
       .filter(n => activeType === 'all' ? true : n.type === activeType)
-      .filter(n => n.content.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter(n => {
+          if (!searchQuery) return true;
+          const query = searchQuery.toLowerCase();
+          const contentMatch = (n.content || '').toLowerCase().includes(query);
+          // Also check title if it exists, though UI mostly uses content
+          const titleMatch = n.title ? (n.title || '').toLowerCase().includes(query) : false;
+          return contentMatch || titleMatch;
+      })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [notes, activeMonth, activeType, searchQuery]);
 
@@ -89,7 +97,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                 <Search className="absolute left-3 top-2.5 text-notion-dim" size={16} />
                 <input 
                     type="text" 
-                    placeholder="搜索灵感..." 
+                    placeholder="搜索..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text"
