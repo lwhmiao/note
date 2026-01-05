@@ -123,8 +123,8 @@ export default function App() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Draggable Menu Button State
-  const [menuPos, setMenuPos] = useState({ x: window.innerWidth - 60, y: 20 });
+  // Draggable Menu Button State - Initial position lowered to avoid overlap with search bar
+  const [menuPos, setMenuPos] = useState({ x: window.innerWidth - 60, y: 90 });
   const [isMenuDragging, setIsMenuDragging] = useState(false);
   const menuDragStartPos = useRef({ x: 0, y: 0 });
 
@@ -277,6 +277,7 @@ export default function App() {
   const callAI = async (prompt: string, tempMessages: ChatMessage[] = []) => {
       const activePreset = getActivePreset();
       if (!activePreset || !activePreset.apiKey) throw new Error("API Key missing");
+      const generateResponse = await import('./services/llm').then(m => m.generateResponse);
       const response = await generateResponse(activePreset, settings.aiName, tempMessages, appState, prompt);
       return response.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || "";
   };

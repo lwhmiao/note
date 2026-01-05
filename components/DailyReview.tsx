@@ -90,116 +90,120 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
   };
 
   return (
-    <div className="h-full flex flex-col bg-texture p-8 overflow-y-auto relative">
-        <header className="mb-8 flex-shrink-0">
-            <h2 className="text-3xl font-display font-bold text-notion-text">每日回顾</h2>
-            <p className="text-notion-dim mt-2">记录每一天的成长与感悟。</p>
-        </header>
+    <div className="h-full flex flex-col bg-texture relative overflow-hidden">
+        
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-8">
+            <header className="mb-8 flex-shrink-0">
+                <h2 className="text-3xl font-display font-bold text-notion-text">每日回顾</h2>
+                <p className="text-notion-dim mt-2">记录每一天的成长与感悟。</p>
+            </header>
 
-        {/* Today's Section - Added flex-shrink-0 to prevent compression */}
-        <section className="bg-white rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0">
-            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                <Sparkles size={120} className="text-notion-accentText" />
-            </div>
-            
-            <div className="flex justify-between items-start mb-6 relative z-10">
-                <div>
-                   <h3 className="text-xl font-bold text-notion-text">今天, {today}</h3>
-                   <span className="text-sm text-notion-dim">Daily Summary</span>
+            {/* Today's Section */}
+            <section className="bg-white rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0">
+                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                    <Sparkles size={120} className="text-notion-accentText" />
                 </div>
-                <div className="flex gap-2">
-                   {todaySummary?.content && (
-                       <button
-                         onClick={() => deleteItem(today)}
-                         className="p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                         title="删除今日小结"
-                       >
-                           <Trash2 size={18}/>
-                       </button>
-                   )}
-                   <button 
-                    onClick={() => onGenerateSummary(today)}
-                    disabled={isGenerating}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-notion-accent text-notion-accentText rounded-xl font-bold hover:bg-pink-100 transition-colors disabled:opacity-50"
-                    >
-                    {todaySummary?.content ? (
-                        <><RotateCw size={18} className={isGenerating ? "animate-spin" : ""} /> 重新生成</>
-                    ) : (
-                        <><Sparkles size={18} className={isGenerating ? "animate-spin" : ""} /> AI 生成小结</>
-                    )}
-                   </button>
-                </div>
-            </div>
-
-            <textarea 
-               className="w-full h-48 bg-notion-sidebar/50 rounded-xl p-4 border-none outline-none resize-none text-notion-text leading-relaxed shadow-inner focus:ring-2 focus:ring-notion-accent/50 transition-all"
-               placeholder="今天发生了什么？点击右上方按钮让 AI 帮你总结..."
-               value={todaySummary?.content || ''}
-               onChange={(e) => onUpdateSummary(today, e.target.value)}
-            />
-        </section>
-
-        {/* Archive - Grouped by Month */}
-        <div className="space-y-8 pb-24 flex-1">
-            {grouped.map(([month, items]) => {
-                // Filter out today from archive view again to be safe
-                const archiveItems = items.filter(i => i.date !== today);
-                if (archiveItems.length === 0) return null;
-
-                return (
-                    <div key={month}>
-                        <h4 className="flex items-center gap-2 text-notion-dim font-bold uppercase tracking-widest mb-4 text-sm sticky top-0 bg-texture/90 backdrop-blur-sm py-2 z-10">
-                            <CalendarDays size={16} /> {month}
-                        </h4>
-                        <div className="grid grid-cols-1 gap-4">
-                            {archiveItems.map(summary => (
-                                <div key={summary.date} className="bg-white p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="text-xs font-bold text-notion-accentText">{summary.date}</div>
-                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {editingDate === summary.date ? (
-                                                <>
-                                                    <button onClick={saveEditing} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"><Check size={16}/></button>
-                                                    <button onClick={cancelEditing} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"><X size={16}/></button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => startEditing(summary)} className="p-1.5 text-notion-dim hover:bg-notion-hover rounded-lg"><Edit3 size={16}/></button>
-                                                    <button onClick={() => deleteItem(summary.date)} className="p-1.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    {editingDate === summary.date ? (
-                                        <textarea 
-                                            className="w-full min-h-[100px] bg-notion-sidebar p-3 rounded-xl border border-notion-border outline-none resize-none text-sm text-notion-text focus:ring-2 focus:ring-notion-accent/50"
-                                            value={editContent}
-                                            onChange={(e) => setEditContent(e.target.value)}
-                                            autoFocus
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-notion-text whitespace-pre-wrap leading-relaxed">
-                                            {summary.content}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                
+                <div className="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                    <h3 className="text-xl font-bold text-notion-text">今天, {today}</h3>
+                    <span className="text-sm text-notion-dim">Daily Summary</span>
                     </div>
-                );
-            })}
-            
-            {grouped.length === 0 && (
-                <div className="text-center text-notion-dim py-10 opacity-60">
-                    没有历史回顾数据。
+                    <div className="flex gap-2">
+                    {todaySummary?.content && (
+                        <button
+                            onClick={() => deleteItem(today)}
+                            className="p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                            title="删除今日小结"
+                        >
+                            <Trash2 size={18}/>
+                        </button>
+                    )}
+                    <button 
+                        onClick={() => onGenerateSummary(today)}
+                        disabled={isGenerating}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-notion-accent text-notion-accentText rounded-xl font-bold hover:bg-pink-100 transition-colors disabled:opacity-50"
+                        >
+                        {todaySummary?.content ? (
+                            <><RotateCw size={18} className={isGenerating ? "animate-spin" : ""} /> 重新生成</>
+                        ) : (
+                            <><Sparkles size={18} className={isGenerating ? "animate-spin" : ""} /> AI 生成小结</>
+                        )}
+                    </button>
+                    </div>
                 </div>
-            )}
+
+                <textarea 
+                className="w-full h-48 bg-notion-sidebar/50 rounded-xl p-4 border-none outline-none resize-none text-notion-text leading-relaxed shadow-inner focus:ring-2 focus:ring-notion-accent/50 transition-all"
+                placeholder="今天发生了什么？点击右上方按钮让 AI 帮你总结..."
+                value={todaySummary?.content || ''}
+                onChange={(e) => onUpdateSummary(today, e.target.value)}
+                />
+            </section>
+
+            {/* Archive - Grouped by Month */}
+            <div className="space-y-8 pb-24">
+                {grouped.map(([month, items]) => {
+                    // Filter out today from archive view again to be safe
+                    const archiveItems = items.filter(i => i.date !== today);
+                    if (archiveItems.length === 0) return null;
+
+                    return (
+                        <div key={month}>
+                            <h4 className="flex items-center gap-2 text-notion-dim font-bold uppercase tracking-widest mb-4 text-sm sticky top-0 bg-texture/90 backdrop-blur-sm py-2 z-10">
+                                <CalendarDays size={16} /> {month}
+                            </h4>
+                            <div className="grid grid-cols-1 gap-4">
+                                {archiveItems.map(summary => (
+                                    <div key={summary.date} className="bg-white p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div className="text-xs font-bold text-notion-accentText">{summary.date}</div>
+                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {editingDate === summary.date ? (
+                                                    <>
+                                                        <button onClick={saveEditing} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"><Check size={16}/></button>
+                                                        <button onClick={cancelEditing} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"><X size={16}/></button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button onClick={() => startEditing(summary)} className="p-1.5 text-notion-dim hover:bg-notion-hover rounded-lg"><Edit3 size={16}/></button>
+                                                        <button onClick={() => deleteItem(summary.date)} className="p-1.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {editingDate === summary.date ? (
+                                            <textarea 
+                                                className="w-full min-h-[100px] bg-notion-sidebar p-3 rounded-xl border border-notion-border outline-none resize-none text-sm text-notion-text focus:ring-2 focus:ring-notion-accent/50"
+                                                value={editContent}
+                                                onChange={(e) => setEditContent(e.target.value)}
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <p className="text-sm text-notion-text whitespace-pre-wrap leading-relaxed">
+                                                {summary.content}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+                
+                {grouped.length === 0 && (
+                    <div className="text-center text-notion-dim py-10 opacity-60">
+                        没有历史回顾数据。
+                    </div>
+                )}
+            </div>
         </div>
 
-        {/* Bottom Floating Action Bar (Archive Menu) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center">
-          <div className="bg-white/95 backdrop-blur-md px-1.5 py-1.5 rounded-full border border-notion-border shadow-float flex gap-2">
+        {/* Bottom Floating Action Bar (Archive Menu) - Fixed relative to Viewport/Parent */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-md px-1.5 py-1.5 rounded-full border border-notion-border shadow-float flex gap-2 pointer-events-auto">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all min-w-[120px] ${isMenuOpen ? 'bg-notion-accent text-notion-accentText' : 'bg-transparent text-notion-text hover:bg-notion-hover'}`}

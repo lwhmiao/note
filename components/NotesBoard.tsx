@@ -13,7 +13,11 @@ interface NotesBoardProps {
 export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onAddNote, onUpdateNote }) => {
   const [activeMonth, setActiveMonth] = useState<string>('all');
   const [activeType, setActiveType] = useState<Note['type'] | 'all'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Search State
+  const [searchInput, setSearchInput] = useState(''); // Text in input
+  const [searchQuery, setSearchQuery] = useState(''); // Actual filter trigger
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Create State
@@ -60,7 +64,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
           if (!searchQuery) return true;
           const query = searchQuery.toLowerCase();
           const contentMatch = (n.content || '').toLowerCase().includes(query);
-          // Also check title if it exists, though UI mostly uses content
           const titleMatch = n.title ? (n.title || '').toLowerCase().includes(query) : false;
           return contentMatch || titleMatch;
       })
@@ -88,20 +91,33 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
     }
   };
 
+  const executeSearch = () => {
+      setSearchQuery(searchInput);
+  };
+
   return (
     <div className="h-full flex flex-col bg-texture overflow-hidden relative">
       
       {/* Top Search & Filter Bar */}
       <div className="p-4 bg-white/50 backdrop-blur-sm flex items-center justify-between gap-4 z-20">
-          <div className="flex-1 relative">
-                <Search className="absolute left-3 top-2.5 text-notion-dim" size={16} />
-                <input 
-                    type="text" 
-                    placeholder="搜索..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text"
-                />
+          <div className="flex-1 relative flex items-center gap-2">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-2.5 text-notion-dim" size={16} />
+                    <input 
+                        type="text" 
+                        placeholder="搜索..." 
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && executeSearch()}
+                        className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text"
+                    />
+                </div>
+                <button 
+                    onClick={executeSearch}
+                    className="bg-notion-accentText text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:opacity-90 transition-opacity"
+                >
+                    搜索
+                </button>
             </div>
       </div>
 
