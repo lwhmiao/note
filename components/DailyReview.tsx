@@ -28,7 +28,8 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
           if (!g[key]) g[key] = [];
           g[key].push(s);
       });
-      return g;
+      // Sort keys descending (Newest month first)
+      return Object.entries(g).sort((a, b) => b[0].localeCompare(a[0]));
   }, [sortedSummaries]);
 
   const today = new Date().toISOString().split('T')[0];
@@ -59,13 +60,13 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
 
   return (
     <div className="h-full flex flex-col bg-texture p-8 overflow-y-auto">
-        <header className="mb-8">
+        <header className="mb-8 flex-shrink-0">
             <h2 className="text-3xl font-display font-bold text-notion-text">每日回顾</h2>
             <p className="text-notion-dim mt-2">记录每一天的成长与感悟。</p>
         </header>
 
-        {/* Today's Section */}
-        <section className="bg-white rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden">
+        {/* Today's Section - Added flex-shrink-0 to prevent compression */}
+        <section className="bg-white rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0">
             <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                 <Sparkles size={120} className="text-notion-accentText" />
             </div>
@@ -100,22 +101,22 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
             </div>
 
             <textarea 
-               className="w-full min-h-[150px] bg-notion-sidebar/50 rounded-xl p-4 border-none outline-none resize-none text-notion-text leading-relaxed shadow-inner focus:ring-2 focus:ring-notion-accent/50 transition-all"
+               className="w-full h-48 bg-notion-sidebar/50 rounded-xl p-4 border-none outline-none resize-none text-notion-text leading-relaxed shadow-inner focus:ring-2 focus:ring-notion-accent/50 transition-all"
                placeholder="今天发生了什么？点击右上方按钮让 AI 帮你总结..."
                value={todaySummary?.content || ''}
                onChange={(e) => onUpdateSummary(today, e.target.value)}
             />
         </section>
 
-        {/* Archive */}
-        <div className="space-y-8 pb-12">
-            {Object.entries(grouped).map(([month, items]) => (
+        {/* Archive - Grouped by Month */}
+        <div className="space-y-8 pb-12 flex-1">
+            {grouped.map(([month, items]) => (
                 <div key={month}>
-                    <h4 className="flex items-center gap-2 text-notion-dim font-bold uppercase tracking-widest mb-4 text-sm">
+                    <h4 className="flex items-center gap-2 text-notion-dim font-bold uppercase tracking-widest mb-4 text-sm sticky top-0 bg-texture/90 backdrop-blur-sm py-2 z-10">
                         <CalendarDays size={16} /> {month}
                     </h4>
                     <div className="grid grid-cols-1 gap-4">
-                        {(items as DailySummary[]).map(summary => (
+                        {items.map(summary => (
                             summary.date !== today && (
                                 <div key={summary.date} className="bg-white p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
                                     <div className="flex justify-between items-center mb-2">

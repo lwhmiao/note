@@ -299,7 +299,8 @@ export default function App() {
       if (!activePreset || !activePreset.apiKey) { setIsSettingsOpen(true); return; }
       setIsGeneratingSummary(true);
       try {
-          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。如果涉及更新总结，请直接使用 JSON action。`;
+          // Limit summary length
+          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。要求：字数严格控制在 100-150 字之间。如果涉及更新总结，请直接使用 JSON action。`;
           const rawResult = await callAI(prompt);
           
           let finalContent = rawResult;
