@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { BacklogTask, Quadrant, TaskType } from '../types';
 import { Plus, Grid, List, X, Calendar, Edit3, Trash2, ArrowRight, Repeat, CheckCircle2 } from 'lucide-react';
 
@@ -76,63 +77,13 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
   // --- Mobile Touch Drag State ---
   const [mobileDragTask, setMobileDragTask] = useState<BacklogTask | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
-  // Fix: Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout to support browser environments where @types/node might be missing
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
+  const dragTaskRef = useRef<BacklogTask | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent, task: BacklogTask) => {
-    const touch = e.touches[0];
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-    
-    // Start long press timer
-    longPressTimer.current = setTimeout(() => {
-        // Trigger Drag Mode
-        setMobileDragTask(task);
-        setDragPos({ x: touch.clientX, y: touch.clientY });
-        if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
-    }, 500); // 500ms long press
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-      const touch = e.touches[0];
-      
-      if (mobileDragTask) {
-          // In dragging mode: update position and prevent scroll
-          e.preventDefault(); 
-          setDragPos({ x: touch.clientX, y: touch.clientY });
-      } else {
-          // Check if user moved finger too much before long press trigger (cancel drag)
-          const diffX = Math.abs(touch.clientX - touchStartPos.current.x);
-          const diffY = Math.abs(touch.clientY - touchStartPos.current.y);
-          if (diffX > 10 || diffY > 10) {
-              if (longPressTimer.current) {
-                  clearTimeout(longPressTimer.current);
-                  longPressTimer.current = null;
-              }
-          }
-      }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-      // Clear timer
-      if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
-      }
-
-      if (mobileDragTask) {
-          // Handle Drop Logic
-          const touch = e.changedTouches[0];
-          const targetQuadrant = getQuadrantFromPoint(touch.clientX, touch.clientY);
-          
-          if (targetQuadrant && targetQuadrant !== mobileDragTask.quadrant) {
-              onUpdateBacklogTask(mobileDragTask.id, { quadrant: targetQuadrant });
-              if (navigator.vibrate) navigator.vibrate(30);
-          }
-
-          setMobileDragTask(null);
-      }
-  };
+  useEffect(() => {
+    dragTaskRef.current = mobileDragTask;
+  }, [mobileDragTask]);
 
   // Helper to find which quadrant the finger is over
   const getQuadrantFromPoint = (x: number, y: number): Quadrant | null => {
@@ -149,6 +100,74 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
       return null;
   };
 
+  // Global Touch Listeners for Dragging
+  useEffect(() => {
+    if (!mobileDragTask) return;
+
+    const handleWindowTouchMove = (e: TouchEvent) => {
+        if (e.cancelable) e.preventDefault(); // Prevent scrolling while dragging
+        const touch = e.touches[0];
+        setDragPos({ x: touch.clientX, y: touch.clientY });
+    };
+
+    const handleWindowTouchEnd = (e: TouchEvent) => {
+        const touch = e.changedTouches[0];
+        const targetQuadrant = getQuadrantFromPoint(touch.clientX, touch.clientY);
+        
+        if (dragTaskRef.current && targetQuadrant && targetQuadrant !== dragTaskRef.current.quadrant) {
+            onUpdateBacklogTask(dragTaskRef.current.id, { quadrant: targetQuadrant });
+            if (navigator.vibrate) navigator.vibrate([10, 50, 10]); // Success Haptic
+        }
+
+        setMobileDragTask(null);
+    };
+
+    // Use passive: false to allow preventDefault
+    window.addEventListener('touchmove', handleWindowTouchMove, { passive: false });
+    window.addEventListener('touchend', handleWindowTouchEnd);
+    
+    return () => {
+        window.removeEventListener('touchmove', handleWindowTouchMove);
+        window.removeEventListener('touchend', handleWindowTouchEnd);
+    };
+  }, [mobileDragTask, onUpdateBacklogTask]);
+
+  const handleTouchStart = (e: React.TouchEvent, task: BacklogTask) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    
+    // Start long press timer
+    longPressTimer.current = setTimeout(() => {
+        setMobileDragTask(task);
+        setDragPos({ x: touch.clientX, y: touch.clientY });
+        if (navigator.vibrate) navigator.vibrate(50); // Start Haptic
+    }, 500); 
+  };
+
+  const handleTouchMoveCheck = (e: React.TouchEvent) => {
+      // Check if finger moved too much before drag started
+      if (!mobileDragTask) {
+          const touch = e.touches[0];
+          const diffX = Math.abs(touch.clientX - touchStartPos.current.x);
+          const diffY = Math.abs(touch.clientY - touchStartPos.current.y);
+          // If moved more than 10px, cancel long press
+          if (diffX > 10 || diffY > 10) {
+              if (longPressTimer.current) {
+                  clearTimeout(longPressTimer.current);
+                  longPressTimer.current = null;
+              }
+          }
+      }
+  };
+
+  const handleTouchEndCheck = () => {
+      // Cancel timer if finger lifted early
+      if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+      }
+  };
+
   const openAddModal = () => {
       setNewTitle('');
       setNewQuadrant(Quadrant.Q2);
@@ -157,7 +176,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
   };
 
   const openDetailModal = (task: BacklogTask) => {
-      if (mobileDragTask) return; // Don't open if just finished dragging
+      if (mobileDragTask) return; // Don't open if currently dragging
       setSelectedTask(task);
       setEditTitle(task.title);
       setScheduleStartDate(new Date().toISOString().split('T')[0]);
@@ -207,8 +226,6 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
   const QuadrantSection = ({ q }: { q: Quadrant }) => {
       const qTasks = tasks.filter(t => t.quadrant === q);
       const style = MORANDI_COLORS[q];
-      // Highlight if dragging over on Desktop (simple effect)
-      // For mobile, we rely on the ghost element visual
 
       return (
           <div 
@@ -231,13 +248,13 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                             draggable
                             onDragStart={(e) => handleDragStart(e, task.id)}
                             
-                            // Touch Events for Mobile Drag
+                            // Touch Events for Mobile Drag Detection
                             onTouchStart={(e) => handleTouchStart(e, task)}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
+                            onTouchMove={handleTouchMoveCheck}
+                            onTouchEnd={handleTouchEndCheck}
                             
                             onClick={() => openDetailModal(task)}
-                            className={`bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-white shadow-sm cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform group touch-none select-none ${isBeingDraggedMobile ? 'opacity-30' : 'opacity-100'}`}
+                            className={`bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-white shadow-sm cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform group select-none ${isBeingDraggedMobile ? 'opacity-30' : 'opacity-100'}`}
                             onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
                         >
                             <div className="flex justify-between items-start gap-2 pointer-events-none">
@@ -284,20 +301,27 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                  <QuadrantSection q={Quadrant.Q3} />
                  <QuadrantSection q={Quadrant.Q4} />
              </div>
-
-             {/* Mobile Drag Ghost Element */}
-             {mobileDragTask && (
-                 <div 
-                    className="fixed z-50 bg-white p-3 rounded-xl border-2 border-notion-accentText shadow-2xl pointer-events-none transform -translate-x-1/2 -translate-y-1/2 w-48 opacity-90"
-                    style={{ left: dragPos.x, top: dragPos.y }}
-                 >
-                    <div className="text-sm font-bold text-notion-text line-clamp-2">{mobileDragTask.title}</div>
-                    <div className="text-xs text-notion-accentText mt-1 flex items-center gap-1">
-                        <CheckCircle2 size={12} /> 移动中...
-                    </div>
-                 </div>
-             )}
         </div>
+        
+        {/* Mobile Drag Ghost - Portal to Body to avoid transform offsets */}
+        {mobileDragTask && createPortal(
+             <div 
+                className="fixed z-[9999] pointer-events-none"
+                style={{ 
+                    left: dragPos.x, 
+                    top: dragPos.y,
+                    transform: 'translate(-50%, -50%)' 
+                }}
+             >
+                <div className="bg-white/90 backdrop-blur p-4 rounded-2xl border-2 border-notion-accentText shadow-2xl w-48 animate-in zoom-in-95 duration-150">
+                   <div className="text-sm font-bold text-notion-text line-clamp-2">{mobileDragTask.title}</div>
+                   <div className="text-xs text-notion-accentText mt-2 flex items-center gap-1 font-medium">
+                       <CheckCircle2 size={14} /> 松手放置
+                   </div>
+                </div>
+             </div>,
+             document.body
+        )}
 
         {/* Floating Add Button */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
