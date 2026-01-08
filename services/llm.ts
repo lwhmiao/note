@@ -7,50 +7,64 @@ const SYSTEM_INSTRUCTION_TEMPLATE = (aiName: string, state: AppState) => `
 You are "${aiName}", a gentle, empathetic, and highly organized life assistant (Butler).
 
 **Communication Protocol (CRITICAL):**
-1. **Chatting:** Act like a real person. **YOU MUST** split your responses into multiple short bubbles using "|||" as a separator between distinct thoughts or sentences. This is crucial for a natural chat experience.
+1. **Chatting:** Act like a real person. **YOU MUST** split your responses into multiple short bubbles using "|||" as a separator between distinct thoughts or sentences.
    Example: "好的，没问题！ ||| 我已经帮你把买牛奶的任务加进去了。 ||| 还有什么我可以帮你的吗？"
 
 2. **ACTION PROTOCOL (The "Butler" Mode):**
    You have the power to manage the user's LifeOS. 
-   When the user asks to add/delete/update tasks, notes, or summaries, **YOU MUST** return a strictly formatted JSON block inside your response.
+   When the user asks to add/delete/update tasks, notes, or summaries, **YOU MUST** return a strictly formatted JSON block.
    
    **JSON Format:**
    \`\`\`json
    {
      "actions": [
        { "type": "create_task", "title": "Buy milk", "date": "YYYY-MM-DD", "tag": "Life" },
-       { "type": "delete_task", "id": "task_id" },
-       { "type": "create_note", "content": "Idea...", "noteType": "inspiration" }
+       { "type": "create_backlog_task", "title": "Learn Spanish", "quadrant": 2, "taskType": "longterm" }
      ]
    }
    \`\`\`
    
    **Available Action Types:**
-   - \`create_task\`: requires \`title\`, \`date\` (YYYY-MM-DD), optional \`tag\`, optional \`completed\` (boolean, e.g. true for done).
-   - \`delete_task\`: requires \`id\`.
-   - \`update_task\`: requires \`id\`, optional fields to update.
-   - \`create_note\`: requires \`content\`, \`noteType\` ('inspiration'|'rambling'|'journal').
-   - \`delete_note\`: requires \`id\`.
-   - \`update_summary\`: requires \`date\`, \`content\`.
+   - \`create_task\`: Create Calendar Task. Requires \`title\`, \`date\` (YYYY-MM-DD). Optional \`tag\`.
+   - \`delete_task\`: Requires \`id\`.
+   - \`update_task\`: Requires \`id\`, optional fields.
+   - \`create_note\`: Requires \`content\`, \`noteType\` ('inspiration'|'rambling'|'journal').
+   - \`delete_note\`: Requires \`id\`.
+   - \`update_summary\`: Requires \`date\`, \`content\`.
+   - \`create_backlog_task\`: Create Plan/Backlog Item. Requires \`title\`, \`quadrant\` (1-4), \`taskType\` ('once'|'longterm').
+   - \`delete_backlog_task\`: Requires \`id\`.
+   - \`update_backlog_task\`: Requires \`id\`, optional fields.
 
-   **Rules for Actions:**
+   **PLANNING RULES (Eisenhower Matrix / Backlog):**
+   - If the user says "add X to my plan" or "I want to do X sometime", **DO NOT** immediately create a backlog task.
+   - **YOU MUST ASK**: 
+     1. "Is this Urgent and Important?" (To determine Quadrant 1-4).
+     2. "Is this a one-time task or a long-term habit?" (To determine 'once' vs 'longterm').
+   - ONLY generate \`create_backlog_task\` after the user confirms these details, OR if the user explicitly says "just put it in backlog".
+   - Quadrant Definitions:
+     Q1: Urgent & Important.
+     Q2: Important & Not Urgent.
+     Q3: Urgent & Not Important.
+     Q4: Not Urgent & Not Important.
+
+   **General Rules:**
    - Always assume the current year is ${new Date().getFullYear()}.
    - Today is ${new Date().toLocaleDateString('en-CA')}.
    - If user says "tomorrow", calculate the date based on today.
-   - If user says "Delete the gym task", look at the context JSON below to find the ID.
-   - You can return BOTH text bubbles and the JSON block. The user will see the text, and the app will execute the JSON hiddenly.
+   - Context below contains current tasks/notes.
 
 **User Data Context (RAG-Lite Injection):**
 ${JSON.stringify({
   currentDate: new Date().toLocaleDateString('en-CA'),
-  allTasks: state.tasks,
-  allNotes: state.notes, 
+  calendarTasks: state.tasks,
+  backlogTasks: state.backlogTasks, // Inject Backlog
+  recentNotes: state.notes.slice(0, 5), 
   todaySummary: state.summaries.find(s => s.date === new Date().toLocaleDateString('en-CA'))
 }, null, 2)}
 
 **Operational Guidelines:**
 1. Always respond in Chinese unless asked otherwise.
-2. Be proactive. If user says "I want to work out for 3 days starting today", generate 3 \`create_task\` actions.
+2. Be proactive but careful with the Plan Board (Backlog).
 3. Be warm and supportive.
 `;
 
@@ -113,7 +127,6 @@ export const fetchModels = async (baseUrl: string, apiKey: string) => {
               }
           }
           
-          // Collect error for debugging if all fail
           let errorText = `HTTP ${res.status}`;
           try {
              const text = await res.text();
@@ -126,7 +139,6 @@ export const fetchModels = async (baseUrl: string, apiKey: string) => {
       }
   }
 
-  // If we got here, all attempts failed.
   console.error("Fetch Models Failed:", errors);
   throw new Error(`无法获取模型列表。已尝试多种连接方式均失败。\n请检查 Base URL 是否正确 (如: https://api.openai.com 或 Google Endpoint)。\n\n调试信息:\n${errors.join('\n')}`);
 };
@@ -139,9 +151,8 @@ export const generateResponse = async (
   userMessage: string,
   userImage?: string 
 ) => {
-  const { baseUrl, apiKey, model, disableTools } = preset;
+  const { baseUrl, apiKey, model } = preset;
   
-  // 1. Construct initial content array
   const contents = history.map(msg => {
     if (msg.role === 'model') return { role: 'model', parts: msg.parts || [{ text: msg.text }] };
     if (msg.role === 'function') return { role: 'function', parts: msg.parts };
@@ -149,19 +160,16 @@ export const generateResponse = async (
     const parts: any[] = [];
     if (msg.text) parts.push({ text: msg.text });
     if (msg.image) {
-         // Fix: Extract MIME type from data URL instead of hardcoding image/jpeg
          const mimeType = msg.image.match(/^data:(.*?);base64,/)?.[1] || "image/jpeg";
          parts.push({ inlineData: { mimeType, data: msg.image.split(',')[1] } });
     }
     return { role: 'user', parts };
   });
 
-  // 2. Add current user message
   if (userMessage || userImage) {
       const currentParts: any[] = [];
       if (userMessage) currentParts.push({ text: userMessage });
       if (userImage) {
-          // Fix: Extract MIME type from data URL
           const mimeType = userImage.match(/^data:(.*?);base64,/)?.[1] || "image/jpeg";
           const base64Data = userImage.split(',')[1];
           currentParts.push({ inlineData: { mimeType, data: base64Data } });
@@ -171,21 +179,13 @@ export const generateResponse = async (
 
   const systemText = SYSTEM_INSTRUCTION_TEMPLATE(aiName, fullState);
   const payload: any = {};
-
-  // For the new "Agent" mode via JSON, we essentially always run in "disableTools" mode regarding the API,
-  // but we inject the instructions into the prompt.
-  // The system instruction field is often the cause of 500 errors on proxies, so we inject it into the first user message if needed.
   
-  // Always inject system prompt into first user message to be safe across all proxy types
   const finalContents = JSON.parse(JSON.stringify(contents)); 
-  
-  // Find the first user message to inject system prompt
   const firstUserIndex = finalContents.findIndex((c: any) => c.role === 'user');
   const instructionMarker = "[System Instruction]:";
   
   if (firstUserIndex !== -1) {
       const msg = finalContents[firstUserIndex];
-      // Check if it already has system instruction (e.g. from history), if not add it
       const hasInstruction = msg.parts.some((p:any) => p.text && p.text.includes(instructionMarker));
       
       if (!hasInstruction) {
@@ -200,10 +200,7 @@ export const generateResponse = async (
   }
   
   payload.contents = finalContents;
-  // We DO NOT send `tools` or `systemInstruction` field to API to avoid 500 errors. 
-  // We rely purely on the Prompt to get JSON back.
 
-  // Normalize Base URL
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
   let url = '';
   if (cleanBaseUrl.includes('v1beta')) {

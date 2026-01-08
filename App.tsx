@@ -8,14 +8,16 @@ import { Dashboard } from './components/Dashboard';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
 import { DailyReview } from './components/DailyReview';
-import { AppState, ViewMode, Task, Note, ChatMessage, AppSettings, DEFAULT_SETTINGS, ThemeId } from './types';
+import { PlanBoard } from './components/PlanBoard';
+import { AppState, ViewMode, Task, Note, ChatMessage, AppSettings, DEFAULT_SETTINGS, ThemeId, BacklogTask, Quadrant, TaskType } from './types';
 import { generateResponse } from './services/llm';
 import { Menu } from 'lucide-react';
 
 const initialState: AppState = {
   tasks: [],
   notes: [],
-  summaries: []
+  summaries: [],
+  backlogTasks: []
 };
 
 const DEFAULT_QUOTES = [
@@ -91,12 +93,14 @@ const THEMES: Record<ThemeId, Record<string, string>> = {
 export default function App() {
   const [appState, setAppState] = useState<AppState>(() => {
     const saved = localStorage.getItem('lifeos_state');
-    return saved ? JSON.parse(saved) : initialState;
+    // Migration: ensure backlogTasks exists
+    const loaded = saved ? JSON.parse(saved) : initialState;
+    if (!loaded.backlogTasks) loaded.backlogTasks = [];
+    return loaded;
   });
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('lifeos_settings');
-    // Migration logic for fontSize if it was a string
     let parsed = saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
     if (typeof parsed.fontSize === 'string') {
        parsed.fontSize = 14; 
@@ -123,26 +127,19 @@ export default function App() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Draggable Menu Button State - Initial position lowered to avoid overlap with search bar
   const [menuPos, setMenuPos] = useState({ x: window.innerWidth - 60, y: 90 });
   const [isMenuDragging, setIsMenuDragging] = useState(false);
   const menuDragStartPos = useRef({ x: 0, y: 0 });
 
-  // --- Theme & Font Engine ---
   useEffect(() => {
     const theme = THEMES[settings.themeId] || THEMES.sakura;
     const root = document.documentElement;
-    
-    // Apply Colors
     Object.entries(theme).forEach(([key, value]) => {
       root.style.setProperty(key, String(value));
     });
-
-    // Apply Font Size
     const fontSizeVal = typeof settings.fontSize === 'number' ? settings.fontSize : 14;
     root.style.setProperty('--app-font-size', `${fontSizeVal}px`);
 
-    // Apply Custom Font
     if (settings.customFontUrl) {
        const linkId = 'lifeos-custom-font';
        let linkEl = document.getElementById(linkId) as HTMLLinkElement;
@@ -153,7 +150,6 @@ export default function App() {
            document.head.appendChild(linkEl);
        }
        linkEl.href = String(settings.customFontUrl);
-       
        const fontUrl = String(settings.customFontUrl);
        const match = fontUrl.match(/family=([^&:]+)/);
        if (match && match[1]) {
@@ -163,15 +159,12 @@ export default function App() {
     } else {
         root.style.removeProperty('--app-font');
     }
-
   }, [settings.themeId, settings.fontSize, settings.customFontUrl]);
 
-  // --- Persistence ---
   useEffect(() => localStorage.setItem('lifeos_state', JSON.stringify(appState)), [appState]);
   useEffect(() => localStorage.setItem('lifeos_settings', JSON.stringify(settings)), [settings]);
   useEffect(() => localStorage.setItem('lifeos_chat', JSON.stringify(messages)), [messages]);
 
-  // --- Drag Logic for Menu ---
   const handleMenuMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
@@ -188,7 +181,7 @@ export default function App() {
 
       if (diffX > 5 || diffY > 5) {
           setIsMenuDragging(true);
-          setMenuPos({ x: moveX - 24, y: moveY - 24 }); // Centered
+          setMenuPos({ x: moveX - 24, y: moveY - 24 });
       }
     };
 
@@ -211,9 +204,7 @@ export default function App() {
       }
   };
 
-
-  // --- Actions ---
-  // Modified addTask to accept optional completed status
+  // --- Task Logic ---
   const addTask = (title: string, date: string, tag?: string, completed: boolean = false) => {
     const newTask: Task = { id: uuidv4(), title, date, completed, tag };
     setAppState(prev => ({ ...prev, tasks: [...prev.tasks, newTask] }));
@@ -231,6 +222,7 @@ export default function App() {
     setAppState(prev => ({ ...prev, tasks: prev.tasks.filter(t => t.id !== id) }));
   };
 
+  // --- Note Logic ---
   const addNote = (content: string, type: Note['type']) => {
     const newNote: Note = { id: uuidv4(), content, type, createdAt: new Date().toISOString() };
     setAppState(prev => ({ ...prev, notes: [newNote, ...prev.notes] }));
@@ -248,6 +240,7 @@ export default function App() {
     setAppState(prev => ({ ...prev, notes: prev.notes.filter(n => n.id !== id) }));
   };
 
+  // --- Summary Logic ---
   const updateSummary = (date: string, content: string) => {
     setAppState(prev => {
       const existing = prev.summaries.find(s => s.date === date);
@@ -264,6 +257,50 @@ export default function App() {
       setAppState(prev => ({ ...prev, summaries: prev.summaries.filter(s => s.date !== date) }));
   };
 
+  // --- Backlog/PlanBoard Logic ---
+  const addBacklogTask = (title: string, quadrant: Quadrant, type: TaskType) => {
+      const newTask: BacklogTask = { id: uuidv4(), title, quadrant, type, createdAt: new Date().toISOString() };
+      setAppState(prev => ({ ...prev, backlogTasks: [...prev.backlogTasks, newTask] }));
+  };
+
+  const updateBacklogTask = (id: string, updates: Partial<BacklogTask>) => {
+      setAppState(prev => ({
+          ...prev,
+          backlogTasks: prev.backlogTasks.map(t => t.id === id ? { ...t, ...updates } : t)
+      }));
+  };
+
+  const deleteBacklogTask = (id: string) => {
+      setAppState(prev => ({ ...prev, backlogTasks: prev.backlogTasks.filter(t => t.id !== id) }));
+  };
+
+  const scheduleBacklogTask = (task: BacklogTask, startDateStr: string, endDateStr?: string) => {
+      if (task.type === 'once') {
+          // Schedule once
+          addTask(task.title, startDateStr, '计划', false);
+          deleteBacklogTask(task.id);
+      } else if (task.type === 'longterm' && endDateStr) {
+          // Schedule range
+          const start = new Date(startDateStr);
+          const end = new Date(endDateStr);
+          const newTasks: Task[] = [];
+          
+          for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
+              // Local ISO YYYY-MM-DD
+              const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+              newTasks.push({
+                  id: uuidv4(),
+                  title: task.title,
+                  date: dateStr,
+                  completed: false,
+                  tag: '计划'
+              });
+          }
+          setAppState(prev => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }));
+          // Do NOT delete backlog task
+      }
+  };
+
   const handleResetData = () => {
       setAppState(initialState);
       setMessages([]);
@@ -273,7 +310,6 @@ export default function App() {
   
   const getActivePreset = () => settings.presets.find(p => p.id === settings.activePresetId);
 
-  // Helper for one-off
   const callAI = async (prompt: string, tempMessages: ChatMessage[] = []) => {
       const activePreset = getActivePreset();
       if (!activePreset || !activePreset.apiKey) throw new Error("API Key missing");
@@ -284,7 +320,7 @@ export default function App() {
 
   const handleRefreshQuote = async () => {
       try {
-          const prompt = "请生成一句简短（30字以内）的中文语录。风格随机：可以是治愈系、励志的、幽默搞怪的、或者“毒鸡汤”（丧一点但真实的）。必须包含颜文字或Emoji。直接返回句子，不要解释。";
+          const prompt = "请生成一句简短（30字以内）的中文语录。风格随机。";
           const result = await callAI(prompt);
           const cleanQuote = result.replace(/```.*?```/g, '').trim(); 
           setQuoteStr(cleanQuote);
@@ -300,39 +336,22 @@ export default function App() {
       if (!activePreset || !activePreset.apiKey) { setIsSettingsOpen(true); return; }
       setIsGeneratingSummary(true);
       try {
-          // Limit summary length
-          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。要求：字数严格控制在 100-150 字之间。如果涉及更新总结，请直接使用 JSON action。`;
+          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。字数100-150字。`;
           const rawResult = await callAI(prompt);
-          
           let finalContent = rawResult;
-          
-          // Parse JSON logic to avoid leakage and actually use the structured data if provided
           const jsonMatch = rawResult.match(/```json\s*([\s\S]*?)\s*```/);
           if (jsonMatch) {
               try {
                   const json = JSON.parse(jsonMatch[1]);
-                  // Check if there is an update_summary action
                   const summaryAction = json.actions?.find((a: any) => a.type === 'update_summary');
-                  
-                  if (summaryAction && summaryAction.content) {
-                      finalContent = summaryAction.content;
-                  } else {
-                      // If no specific action, just strip the JSON block from the text
-                      finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
-                  }
+                  if (summaryAction && summaryAction.content) finalContent = summaryAction.content;
+                  else finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
               } catch (e) {
-                  console.error("Error parsing summary JSON", e);
-                  // Fallback: strip JSON regex
                   finalContent = rawResult.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
               }
           }
-
-          // Clean up chat bubbles separators if present
           finalContent = finalContent.split('|||').join('\n').trim();
-
-          if (finalContent) {
-              updateSummary(date, finalContent);
-          }
+          if (finalContent) updateSummary(date, finalContent);
       } catch (e) { 
           alert("生成失败"); 
       } finally { 
@@ -340,18 +359,15 @@ export default function App() {
       }
   };
 
-  // Agent Executor (Protocol Handler)
   const executeAgentAction = (action: any) => {
       console.log("Agent executing:", action);
       try {
           switch (action.type) {
               case 'create_task':
-                  // Pass action.completed if provided
                   addTask(action.title, action.date, action.tag, action.completed || false);
                   break;
               case 'update_task':
               case 'complete_task':
-                  // Fixed potential reference error using action.id
                   updateTask(action.id, action.action === 'complete_task' ? { completed: true } : action);
                   break;
               case 'delete_task':
@@ -365,6 +381,16 @@ export default function App() {
                   break;
               case 'update_summary':
                   updateSummary(action.date, action.content);
+                  break;
+              // New Backlog Actions
+              case 'create_backlog_task':
+                  addBacklogTask(action.title, action.quadrant || Quadrant.Q2, action.taskType || 'once');
+                  break;
+              case 'delete_backlog_task':
+                  deleteBacklogTask(action.id);
+                  break;
+              case 'update_backlog_task':
+                  updateBacklogTask(action.id, action);
                   break;
           }
       } catch (e) {
@@ -385,7 +411,6 @@ export default function App() {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, text: newText } : m));
   };
 
-  // Main AI Logic
   const handleTriggerAI = async (regenerate = false) => {
     const activePreset = getActivePreset();
     if (!activePreset || !activePreset.apiKey) {
@@ -400,7 +425,6 @@ export default function App() {
       const historyLimit = settings.historyLimit || 20;
       let currentMessages = [...messages];
 
-      // Regeneration Logic: Remove ALL AI messages from the last turn
       if (regenerate) {
           let lastUserIndex = -1;
           for (let i = currentMessages.length - 1; i >= 0; i--) {
@@ -409,28 +433,22 @@ export default function App() {
                   break;
               }
           }
-          
           if (lastUserIndex !== -1) {
-              // Keep messages up to and including the last user message
               currentMessages = currentMessages.slice(0, lastUserIndex + 1);
-              setMessages(currentMessages); // Visual update
+              setMessages(currentMessages);
           }
       }
 
       const recentHistory = currentMessages.slice(-historyLimit);
-      
       const response = await generateResponse(activePreset, settings.aiName, recentHistory, appState, "");
       const candidate = response.candidates?.[0];
       const modelContent = candidate?.content;
       
       if (!modelContent) throw new Error("No content");
 
-      // Check for JSON Protocol (The Agent "Brain") inside text
       const rawText = modelContent.parts?.map((p: any) => p.text).join('') || "";
-      
       let displayText = rawText;
       let agentActions: any[] = [];
-
       const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
       
       if (jsonMatch) {
@@ -438,37 +456,22 @@ export default function App() {
               const jsonContent = JSON.parse(jsonMatch[1]);
               if (jsonContent.actions && Array.isArray(jsonContent.actions)) {
                   agentActions = jsonContent.actions;
-                  
-                  // Execute Agent Actions
                   agentActions.forEach(action => executeAgentAction(action));
-
-                  // Clean the text for display (Remove the JSON block)
                   displayText = rawText.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
-                  
-                  if (!displayText) {
-                      displayText = "已为您更新日程。";
-                  }
+                  if (!displayText) displayText = "已为您更新数据。";
               }
           } catch (e) {
               console.error("Failed to parse Agent JSON", e);
           }
       }
 
-      // Sequential bubble display with human-like delay
       const bubbles = displayText.split('|||').map(s => s.trim()).filter(s => s);
-      
-      // Initial thought delay
-      if (bubbles.length > 0) {
-          await new Promise(resolve => setTimeout(resolve, 400));
-      }
+      if (bubbles.length > 0) await new Promise(resolve => setTimeout(resolve, 400));
 
       for (let i = 0; i < bubbles.length; i++) {
-          const b = bubbles[i];
-          setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: b, timestamp: Date.now() }]);
-          
-          // Add delay between bubbles if there's more than one
+          setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: bubbles[i], timestamp: Date.now() }]);
           if (i < bubbles.length - 1) {
-              const delay = 800 + Math.random() * 1000; // Slightly more pronounced rhythm (0.8s to 1.8s)
+              const delay = 800 + Math.random() * 1000;
               await new Promise(resolve => setTimeout(resolve, delay));
           }
       }
@@ -560,6 +563,15 @@ export default function App() {
                   onAddNote={addNote}
                   onUpdateNote={updateNote}
                 />
+              )}
+              {currentView === ViewMode.PLAN_BOARD && (
+                  <PlanBoard
+                    tasks={appState.backlogTasks}
+                    onAddBacklogTask={addBacklogTask}
+                    onUpdateBacklogTask={updateBacklogTask}
+                    onDeleteBacklogTask={deleteBacklogTask}
+                    onScheduleTask={scheduleBacklogTask}
+                  />
               )}
             </div>
           </main>

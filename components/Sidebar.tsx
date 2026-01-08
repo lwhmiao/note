@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ViewMode } from '../types';
-import { Calendar, FileText, LayoutDashboard, Settings, Coffee, NotebookText, Heart } from 'lucide-react';
+import { Calendar, FileText, LayoutDashboard, Settings, Coffee, NotebookText, Heart, Layers } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -55,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         <div className="mt-6 px-4 py-2 text-xs font-semibold text-notion-dim uppercase tracking-wider">管理</div>
         <MenuItem view={ViewMode.CALENDAR} icon={Calendar} label="日历 & 待办" />
         <MenuItem view={ViewMode.NOTES} icon={FileText} label="笔记 & 灵感" />
+        <MenuItem view={ViewMode.PLAN_BOARD} icon={Layers} label="计划池" />
       </nav>
 
       <div className="p-4 border-t border-notion-border sidebar-footer">

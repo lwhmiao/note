@@ -1,4 +1,5 @@
 
+
 export interface Task {
   id: string;
   title: string;
@@ -20,10 +21,30 @@ export interface DailySummary {
   content: string;
 }
 
+// --- Plan Board / Backlog Types ---
+
+export enum Quadrant {
+  Q1 = 1, // Important & Urgent
+  Q2 = 2, // Important & Not Urgent
+  Q3 = 3, // Not Important & Urgent
+  Q4 = 4  // Not Important & Not Urgent
+}
+
+export type TaskType = 'once' | 'longterm';
+
+export interface BacklogTask {
+  id: string;
+  title: string;
+  quadrant: Quadrant;
+  type: TaskType;
+  createdAt: string;
+}
+
 export interface AppState {
   tasks: Task[];
   notes: Note[];
   summaries: DailySummary[];
+  backlogTasks: BacklogTask[]; // New: Backlog pool
 }
 
 export interface ChatMessage {
@@ -40,6 +61,7 @@ export enum ViewMode {
   DASHBOARD = 'DASHBOARD',
   CALENDAR = 'CALENDAR',
   NOTES = 'NOTES',
+  PLAN_BOARD = 'PLAN_BOARD', // New View
   DAILY_REVIEW = 'DAILY_REVIEW',
   SETTINGS = 'SETTINGS'
 }
