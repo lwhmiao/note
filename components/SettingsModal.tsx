@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { AppSettings, ApiPreset, DEFAULT_PRESET, AppState, ThemeId } from '../types';
+import { AppSettings, ApiPreset, DEFAULT_PRESET, AppState, ThemeId, ChatMessage } from '../types';
 import { X, Save, Plus, Trash2, Download, Upload, RefreshCw, Palette, Globe, Database, Monitor, Type, Copy, Check, CloudDownload, ChevronDown, ShieldAlert, RotateCcw, AlertTriangle } from 'lucide-react';
 import { fetchModels } from '../services/llm';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,7 +12,10 @@ interface SettingsModalProps {
   onSaveSettings: (s: AppSettings) => void;
   appState: AppState;
   onImportState: (s: AppState) => void;
+  onImportFullData?: (data: any) => void;
   onResetData: () => void;
+  currentMessages?: ChatMessage[];
+  currentQuote?: string;
 }
 
 const THEMES: { id: ThemeId; name: string; color: string }[] = [
@@ -24,7 +27,7 @@ const THEMES: { id: ThemeId; name: string; color: string }[] = [
 ];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
-  isOpen, onClose, settings, onSaveSettings, appState, onImportState, onResetData
+  isOpen, onClose, settings, onSaveSettings, appState, onImportState, onImportFullData, onResetData, currentMessages, currentQuote
 }) => {
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [activeTab, setActiveTab] = useState<'appearance' | 'api' | 'data'>('appearance');
@@ -153,10 +156,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   );
 
   const handleExport = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState));
+    // Export Full Snapshot including chat history and settings
+    const exportData = {
+        version: "2.0",
+        timestamp: Date.now(),
+        data: appState,
+        settings: settings, // Include API keys and personas
+        chat: currentMessages || [], // Include chat history
+        quote: currentQuote || ""
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `lifeos_backup_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchorNode.setAttribute("download", `LifeOS_Backup_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -169,13 +182,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         fileReader.onload = (e) => {
             try {
                 const parsed = JSON.parse(e.target?.result as string);
-                if (parsed.tasks && parsed.notes) {
-                    if(confirm("导入将覆盖当前所有数据，确定吗？")) {
+                
+                // Detection: Version 2.0 (Full Snapshot) or Legacy (AppState only)
+                if (parsed.version === "2.0" || (parsed.data && parsed.settings)) {
+                    if(confirm("导入将覆盖当前所有应用数据（包括 API 设置和聊天记录），确定吗？")) {
+                        if (onImportFullData) onImportFullData(parsed);
+                        alert("全量数据导入成功！");
+                    }
+                } else if (parsed.tasks && parsed.notes) {
+                    // Legacy Format
+                    if(confirm("检测到旧版备份格式。导入将仅覆盖任务和笔记数据，确定吗？")) {
                         onImportState(parsed);
                         alert("导入成功！");
                     }
                 } else {
-                    alert("文件格式不正确");
+                    alert("文件格式不正确，无法识别备份数据。");
                 }
             } catch (err) {
                 alert("无法解析 JSON 文件");
@@ -186,7 +207,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-notion-text/20 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 flex flex-col max-h-[90vh]">
+      <div className="bg-notion-bg w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 flex flex-col max-h-[90vh]">
         
         <div className="p-6 border-b border-notion-border flex justify-between items-center bg-notion-sidebar">
           <h2 className="text-xl font-display font-bold text-notion-text">系统设置</h2>
@@ -242,7 +263,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                   max="24"
                                   value={localSettings.fontSize}
                                   onChange={(e) => setLocalSettings(s => ({ ...s, fontSize: parseInt(e.target.value) || 14 }))}
-                                  className="w-20 p-2.5 rounded-xl border border-notion-border text-center font-bold text-notion-text outline-none focus:ring-2 focus:ring-notion-accent/50"
+                                  className="w-20 p-2.5 rounded-xl border border-notion-border text-center font-bold text-notion-text outline-none focus:ring-2 focus:ring-notion-accent/50 bg-notion-sidebar"
                                 />
                                 <span className="text-sm text-notion-dim">px (默认 14px)</span>
                              </div>
@@ -250,7 +271,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div className="space-y-1.5">
                             <span className="text-sm font-medium text-notion-text">自定义字体 (CSS URL)</span>
                             <input 
-                                className="w-full p-2.5 rounded-xl border border-notion-border text-xs font-mono placeholder:text-gray-400 focus:ring-2 focus:ring-notion-accent/50 outline-none"
+                                className="w-full p-2.5 rounded-xl border border-notion-border text-xs font-mono placeholder:text-gray-400 focus:ring-2 focus:ring-notion-accent/50 outline-none bg-notion-sidebar text-notion-text"
                                 placeholder="https://fonts.googleapis.com/css2?family=..."
                                 value={localSettings.customFontUrl}
                                 onChange={e => setLocalSettings(s => ({ ...s, customFontUrl: e.target.value }))}
@@ -269,7 +290,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                     <div className="flex gap-2">
                         <input 
-                          className="flex-1 p-3 rounded-xl bg-notion-sidebar border border-notion-border text-xs font-mono placeholder:text-gray-400 truncate focus:ring-2 focus:ring-notion-accent/50 outline-none"
+                          className="flex-1 p-3 rounded-xl bg-notion-sidebar border border-notion-border text-xs font-mono placeholder:text-gray-400 truncate focus:ring-2 focus:ring-notion-accent/50 outline-none text-notion-text"
                           placeholder="图片 URL (https://...)"
                           value={localSettings.globalBackgroundImageUrl}
                           onChange={e => setLocalSettings(s => ({ ...s, globalBackgroundImageUrl: e.target.value }))}
@@ -296,7 +317,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     className={`px-4 py-2 rounded-xl text-sm whitespace-nowrap border transition-all flex items-center gap-2 ${
                       localSettings.activePresetId === preset.id
                         ? 'bg-notion-accent border-notion-accentBorder text-notion-accentText font-bold shadow-sm'
-                        : 'bg-white border-notion-border text-notion-dim hover:border-notion-dim'
+                        : 'bg-notion-sidebar border-notion-border text-notion-dim hover:border-notion-dim'
                     }`}
                   >
                     {localSettings.activePresetId === preset.id && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
@@ -312,7 +333,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-4 p-5 bg-notion-sidebar/50 rounded-2xl border border-notion-border">
+              <div className="space-y-4 p-5 bg-notion-sidebar rounded-2xl border border-notion-border">
                 <div className="flex justify-between items-center">
                     <h3 className="text-sm font-bold text-notion-text">配置详情</h3>
                     {localSettings.presets.length > 1 && (
@@ -334,7 +355,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="text"
                         value={activePreset.name}
                         onChange={e => updatePreset(activePreset.id, { name: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-notion-border text-sm focus:ring-2 focus:ring-notion-accent/50 outline-none bg-white"
+                        className="w-full p-3 rounded-xl border border-notion-border text-sm focus:ring-2 focus:ring-notion-accent/50 outline-none bg-notion-bg text-notion-text"
                       />
                     </div>
 
@@ -344,7 +365,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="text"
                         value={activePreset.baseUrl}
                         onChange={e => updatePreset(activePreset.id, { baseUrl: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-notion-border text-sm font-mono text-notion-dim focus:text-notion-text focus:ring-2 focus:ring-notion-accent/50 outline-none transition-colors bg-white"
+                        className="w-full p-3 rounded-xl border border-notion-border text-sm font-mono text-notion-dim focus:text-notion-text focus:ring-2 focus:ring-notion-accent/50 outline-none transition-colors bg-notion-bg"
                         placeholder="https://generativelanguage.googleapis.com"
                       />
                     </div>
@@ -355,7 +376,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="password"
                         value={activePreset.apiKey}
                         onChange={e => updatePreset(activePreset.id, { apiKey: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-notion-border text-sm font-mono focus:ring-2 focus:ring-notion-accent/50 outline-none bg-white"
+                        className="w-full p-3 rounded-xl border border-notion-border text-sm font-mono focus:ring-2 focus:ring-notion-accent/50 outline-none bg-notion-bg text-notion-text"
                       />
                     </div>
 
@@ -365,7 +386,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         {fetchedModels.length > 0 ? (
                            <div className="relative">
                                <select 
-                                   className="w-full p-3 pr-10 rounded-xl border border-notion-border text-sm font-mono focus:ring-2 focus:ring-notion-accent/50 outline-none bg-white appearance-none text-notion-text"
+                                   className="w-full p-3 pr-10 rounded-xl border border-notion-border text-sm font-mono focus:ring-2 focus:ring-notion-accent/50 outline-none bg-notion-bg appearance-none text-notion-text"
                                    value={activePreset.model}
                                    onChange={e => updatePreset(activePreset.id, { model: e.target.value })}
                                >
@@ -379,7 +400,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 type="text"
                                 value={activePreset.model}
                                 onChange={e => updatePreset(activePreset.id, { model: e.target.value })}
-                                className="w-full p-3 rounded-xl border border-notion-border text-sm font-mono focus:ring-2 focus:ring-notion-accent/50 outline-none bg-white"
+                                className="w-full p-3 rounded-xl border border-notion-border text-sm font-mono focus:ring-2 focus:ring-notion-accent/50 outline-none bg-notion-bg text-notion-text"
                                 placeholder="gemini-1.5-flash"
                                 list="model-options"
                                 />
@@ -412,7 +433,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="button"
                         onClick={handleFetchModels}
                         disabled={isTesting || !activePreset.apiKey}
-                        className="w-full mt-2 py-3 bg-notion-text text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        className="w-full mt-2 py-3 bg-notion-text text-white dark:text-black rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                     >
                         {isTesting ? <RefreshCw size={18} className="animate-spin"/> : <CloudDownload size={18}/>}
                         {isTesting ? '正在尝试连接...' : '拉取并更新模型列表'}
@@ -428,26 +449,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* --- Data Tab --- */}
           {activeTab === 'data' && (
             <div className="space-y-6">
-              <div className="p-6 bg-white rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-green-200 transition-colors group">
+              <div className="p-6 bg-notion-sidebar rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-green-200 transition-colors group">
                  <div className="p-3 bg-green-50 rounded-full text-green-600 group-hover:scale-110 transition-transform">
                     <Download size={24} />
                  </div>
                  <div>
-                   <h3 className="font-bold text-notion-text">备份数据</h3>
-                   <p className="text-sm text-notion-dim mt-1">导出所有任务、笔记、聊天记录。</p>
+                   <h3 className="font-bold text-notion-text">备份数据 (全量)</h3>
+                   <p className="text-sm text-notion-dim mt-1">导出任务、笔记、聊天记录、API 配置和个人偏好。</p>
                  </div>
-                 <button type="button" onClick={handleExport} className="px-6 py-2 bg-notion-text text-white rounded-xl font-medium hover:opacity-90 transition-opacity">
-                   导出 JSON
+                 <button type="button" onClick={handleExport} className="px-6 py-2 bg-notion-text text-white dark:text-black rounded-xl font-medium hover:opacity-90 transition-opacity">
+                   导出全量快照 (JSON)
                  </button>
               </div>
 
-              <div className="p-6 bg-white rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-orange-200 transition-colors group">
+              <div className="p-6 bg-notion-sidebar rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-orange-200 transition-colors group">
                  <div className="p-3 bg-orange-50 rounded-full text-orange-600 group-hover:scale-110 transition-transform">
                     <Upload size={24} />
                  </div>
                  <div>
                    <h3 className="font-bold text-notion-text">恢复数据</h3>
-                   <p className="text-sm text-notion-dim mt-1">警告：这将覆盖当前所有数据。</p>
+                   <p className="text-sm text-notion-dim mt-1">支持全量快照或旧版数据。<br/><span className="text-red-400">警告：将覆盖当前所有数据。</span></p>
                  </div>
                  <label className="px-6 py-2 bg-white border border-notion-border text-notion-text rounded-xl font-medium hover:bg-notion-hover transition-colors cursor-pointer">
                    选择备份文件
@@ -477,7 +498,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 bg-notion-accentText text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-lg shadow-pink-200/50"
+            className="flex items-center gap-2 px-6 py-3 bg-notion-accentText text-white dark:text-black rounded-xl font-medium hover:opacity-90 transition-opacity shadow-lg shadow-pink-200/50"
           >
             <Save size={18} />
             保存生效

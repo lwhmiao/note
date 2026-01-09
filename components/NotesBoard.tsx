@@ -99,7 +99,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
     <div className="h-full flex flex-col bg-texture overflow-hidden relative">
       
       {/* Top Search & Filter Bar */}
-      <div className="p-4 bg-white/50 backdrop-blur-sm flex items-center justify-between gap-4 z-20">
+      <div className="p-4 bg-notion-bg/50 backdrop-blur-sm flex items-center justify-between gap-4 z-20">
           <div className="flex-1 relative flex items-center gap-2">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 text-notion-dim" size={16} />
@@ -109,12 +109,12 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && executeSearch()}
-                        className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text"
+                        className="w-full pl-9 pr-4 py-2.5 bg-notion-sidebar rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text placeholder:text-notion-dim/50"
                     />
                 </div>
                 <button 
                     onClick={executeSearch}
-                    className="bg-notion-accentText text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:opacity-90 transition-opacity"
+                    className="bg-notion-accentText text-white dark:text-black px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:opacity-90 transition-opacity"
                 >
                     搜索
                 </button>
@@ -130,8 +130,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                 onClick={() => setActiveType(cat.id as any)}
                 className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border whitespace-nowrap flex items-center gap-2 ${
                     activeType === cat.id
-                    ? 'bg-notion-text border-notion-text text-white shadow-md'
-                    : 'bg-white border-notion-border text-notion-dim hover:border-notion-accentText hover:text-notion-accentText'
+                    ? 'bg-notion-text border-notion-text text-notion-bg shadow-md'
+                    : 'bg-notion-sidebar border-notion-border text-notion-dim hover:border-notion-accentText hover:text-notion-accentText'
                 }`}
                 >
                 {cat.icon && <cat.icon size={14}/>}
@@ -145,7 +145,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                 <div 
                     key={note.id} 
                     onClick={() => openNote(note)}
-                    className="break-inside-avoid bg-white p-6 rounded-2xl border border-notion-border shadow-sm hover:shadow-soft hover:border-notion-accentBorder transition-all cursor-pointer group hover:-translate-y-1"
+                    className="break-inside-avoid bg-notion-sidebar p-6 rounded-2xl border border-notion-border shadow-sm hover:shadow-soft hover:border-notion-accentBorder transition-all cursor-pointer group hover:-translate-y-1"
                 >
                     <div className="flex items-center justify-between mb-4">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full text-notion-accentText bg-notion-accent/50 border border-notion-accentBorder`}>
@@ -182,7 +182,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
           <div className="w-px h-6 bg-notion-border"></div>
           <button 
             onClick={() => setIsCreating(true)}
-            className="flex items-center justify-center gap-2 px-8 py-2.5 bg-notion-accentText text-white rounded-full shadow-md shadow-pink-200/50 hover:opacity-90 transition-all font-bold text-sm min-w-[120px]"
+            className="flex items-center justify-center gap-2 px-8 py-2.5 bg-notion-accentText text-white dark:text-black rounded-full shadow-md shadow-pink-200/50 hover:opacity-90 transition-all font-bold text-sm min-w-[120px]"
           >
               <Plus size={18} /> 记一笔
           </button>
@@ -191,7 +191,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
       {/* Popover Navigation Menu (Positioned above bottom bar) */}
       {isMenuOpen && (
           <div 
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 w-64 bg-white rounded-2xl shadow-float border border-notion-border p-2 animate-in slide-in-from-bottom-2 fade-in duration-200"
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 w-64 bg-notion-bg rounded-2xl shadow-float border border-notion-border p-2 animate-in slide-in-from-bottom-2 fade-in duration-200"
             onClick={(e) => e.stopPropagation()}
           >
              <div className="max-h-[50vh] overflow-y-auto">
@@ -224,7 +224,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
       {/* Create Modal */}
       {isCreating && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/20 backdrop-blur-sm p-4">
-              <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-6 border border-white/50">
+              <div className="bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl p-6 border border-white/20">
                   <div className="flex justify-between items-center mb-4">
                       <h3 className="font-bold text-lg text-notion-text">记一笔</h3>
                       <button onClick={() => setIsCreating(false)}><X size={20} className="text-notion-dim hover:text-notion-text"/></button>
@@ -248,7 +248,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                               </button>
                           ))}
                       </div>
-                      <button onClick={handleAddSubmit} className="bg-notion-accentText text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg shadow-pink-200/50 hover:opacity-90 transition-opacity">
+                      <button onClick={handleAddSubmit} className="bg-notion-accentText text-white dark:text-black px-6 py-2 rounded-xl text-sm font-bold shadow-lg shadow-pink-200/50 hover:opacity-90 transition-opacity">
                           保存
                       </button>
                   </div>
@@ -259,7 +259,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
       {/* Detail/Edit Modal */}
       {selectedNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/20 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-white/50 flex flex-col max-h-[85vh] overflow-hidden">
+          <div className="bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl border border-white/20 flex flex-col max-h-[85vh] overflow-hidden">
             <div className="p-4 border-b border-notion-border flex justify-between items-center bg-notion-sidebar/50">
               <div className="flex items-center gap-2">
                  {isEditing ? (
@@ -312,7 +312,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                {isEditing && (
                  <button 
                    onClick={handleSaveEdit}
-                   className="bg-notion-accentText text-white px-6 py-2 rounded-xl font-medium shadow-lg shadow-pink-200/50 hover:opacity-90 transition-opacity flex items-center gap-2"
+                   className="bg-notion-accentText text-white dark:text-black px-6 py-2 rounded-xl font-medium shadow-lg shadow-pink-200/50 hover:opacity-90 transition-opacity flex items-center gap-2"
                  >
                    <Save size={16} /> 保存
                  </button>

@@ -12,11 +12,38 @@ interface PlanBoardProps {
   onScheduleTask: (task: BacklogTask, startDate: string, endDate?: string) => void;
 }
 
+// Low Saturation Morandi Colors
+// We use custom classes or style injection strategies via Tailwind's arbitrary values for precise control
+// Dark mode strategy: Use white/10 or white/5 transparency to blend with dark background, rather than distinct colors.
 const MORANDI_COLORS = {
-  [Quadrant.Q1]: { bg: 'bg-red-50/60', border: 'border-red-100', text: 'text-red-900', badge: 'bg-red-100 text-red-700' }, // Urgent Important
-  [Quadrant.Q2]: { bg: 'bg-blue-50/60', border: 'border-blue-100', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-700' }, // Not Urgent Important
-  [Quadrant.Q3]: { bg: 'bg-orange-50/60', border: 'border-orange-100', text: 'text-orange-900', badge: 'bg-orange-100 text-orange-700' }, // Urgent Not Important
-  [Quadrant.Q4]: { bg: 'bg-gray-50/60', border: 'border-gray-100', text: 'text-gray-900', badge: 'bg-gray-100 text-gray-700' }, // Not Urgent Not Important
+  // Q1: Muted Red/Pink -> Desaturated to almost gray-pink
+  [Quadrant.Q1]: { 
+      bg: 'bg-[#F0EBEB] dark:bg-white/10', 
+      border: 'border-[#E0D5D5] dark:border-white/10', 
+      text: 'text-[#524545] dark:text-[#E0E0E0]', 
+      badge: 'bg-[#E0D5D5] text-[#524545]' 
+  }, 
+  // Q2: Muted Blue/Grey
+  [Quadrant.Q2]: { 
+      bg: 'bg-[#E6F0F2] dark:bg-white/5', 
+      border: 'border-[#D0E0E6] dark:border-white/10', 
+      text: 'text-[#3A4A5C] dark:text-[#D0D0D0]', 
+      badge: 'bg-[#D0E0E6] text-[#3A4A5C]' 
+  }, 
+  // Q3: Muted Beige/Yellow
+  [Quadrant.Q3]: { 
+      bg: 'bg-[#F2F0E6] dark:bg-white/5', 
+      border: 'border-[#E6E0D0] dark:border-white/10', 
+      text: 'text-[#5C553A] dark:text-[#D0D0D0]', 
+      badge: 'bg-[#E6E0D0] text-[#5C553A]' 
+  }, 
+  // Q4: Muted Neutral Gray
+  [Quadrant.Q4]: { 
+      bg: 'bg-[#F0F0F0] dark:bg-white/[0.02]', 
+      border: 'border-[#E0E0E0] dark:border-white/5', 
+      text: 'text-[#5C5C5C] dark:text-[#A0A0A0]', 
+      badge: 'bg-[#E0E0E0] text-[#5C5C5C]' 
+  }, 
 };
 
 const QUADRANT_TITLES = {
@@ -257,7 +284,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                             onTouchEnd={handleTouchEndCheck}
                             
                             onClick={() => openDetailModal(task)}
-                            className={`bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-white shadow-sm cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform group select-none ${isBeingDraggedMobile ? 'opacity-30' : 'opacity-100'}`}
+                            className={`bg-notion-sidebar dark:bg-notion-bg backdrop-blur-sm p-3 rounded-xl border border-white/20 shadow-sm cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform group select-none ${isBeingDraggedMobile ? 'opacity-30' : 'opacity-100'}`}
                             onContextMenu={(e) => e.preventDefault()} // Prevent context menu
                         >
                             <div className="flex justify-between items-start gap-2 pointer-events-none">
@@ -270,7 +297,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                       );
                   })}
                   {qTasks.length === 0 && (
-                      <div className="h-full flex items-center justify-center text-xs opacity-30 italic font-medium pointer-events-none">
+                      <div className="h-full flex items-center justify-center text-xs opacity-30 italic font-medium pointer-events-none text-notion-dim">
                           空空如也
                       </div>
                   )}
@@ -289,9 +316,9 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                 <p className="text-notion-dim mt-1 text-sm">种下一棵树最好的时间是十年前，其次是现在。</p>
             </div>
             
-            <div className="md:hidden bg-white rounded-lg p-1 border border-notion-border flex">
-                <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-notion-sidebar text-notion-accentText' : 'text-notion-dim'}`}><List size={18}/></button>
-                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-notion-sidebar text-notion-accentText' : 'text-notion-dim'}`}><Grid size={18}/></button>
+            <div className="md:hidden bg-notion-sidebar rounded-lg p-1 border border-notion-border flex">
+                <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-notion-accent text-notion-accentText' : 'text-notion-dim'}`}><List size={18}/></button>
+                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-notion-accent text-notion-accentText' : 'text-notion-dim'}`}><Grid size={18}/></button>
             </div>
         </div>
 
@@ -331,7 +358,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
             <button 
                 onClick={openAddModal}
-                className="flex items-center gap-2 px-8 py-3 bg-notion-accentText text-white rounded-full shadow-lg shadow-pink-200/50 hover:scale-105 transition-transform font-bold"
+                className="flex items-center gap-2 px-8 py-3 bg-notion-accentText text-white dark:text-black rounded-full shadow-lg shadow-pink-200/50 hover:scale-105 transition-transform font-bold"
             >
                 <Plus size={20} /> 新增计划
             </button>
@@ -340,7 +367,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
         {/* Add Modal */}
         {isAddModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-                <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/50 animate-in zoom-in-95 duration-200">
+                <div className="bg-notion-bg w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-notion-text">新增待安排计划</h3>
                         <button onClick={() => setIsAddModalOpen(false)} className="text-notion-dim hover:text-notion-text"><X size={20}/></button>
@@ -368,7 +395,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                                         className={`p-3 rounded-xl border text-sm font-medium transition-all text-left ${
                                             newQuadrant === q 
                                             ? `${MORANDI_COLORS[q as Quadrant].bg} ${MORANDI_COLORS[q as Quadrant].border} ${MORANDI_COLORS[q as Quadrant].text} ring-1 ring-offset-1 ring-notion-border` 
-                                            : 'bg-white border-notion-border text-notion-dim hover:bg-notion-sidebar'
+                                            : 'bg-notion-sidebar border-notion-border text-notion-dim hover:bg-notion-hover'
                                         }`}
                                     >
                                         {QUADRANT_TITLES[q as Quadrant]}
@@ -383,7 +410,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                                 <button 
                                     onClick={() => setNewType('once')}
                                     className={`flex-1 p-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 ${
-                                        newType === 'once' ? 'bg-notion-text text-white border-notion-text' : 'bg-white border-notion-border text-notion-dim'
+                                        newType === 'once' ? 'bg-notion-text text-white border-notion-text' : 'bg-notion-sidebar border-notion-border text-notion-dim'
                                     }`}
                                 >
                                     <CheckCircle2 size={16}/> 一次性任务
@@ -391,7 +418,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                                 <button 
                                     onClick={() => setNewType('longterm')}
                                     className={`flex-1 p-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 ${
-                                        newType === 'longterm' ? 'bg-notion-text text-white border-notion-text' : 'bg-white border-notion-border text-notion-dim'
+                                        newType === 'longterm' ? 'bg-notion-text text-white border-notion-text' : 'bg-notion-sidebar border-notion-border text-notion-dim'
                                     }`}
                                 >
                                     <Repeat size={16}/> 长期任务
@@ -403,7 +430,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                     <button 
                         onClick={handleAddSubmit}
                         disabled={!newTitle.trim()}
-                        className="w-full mt-8 py-3 bg-notion-accentText text-white rounded-xl font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="w-full mt-8 py-3 bg-notion-accentText text-white dark:text-black rounded-xl font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                         放入计划池
                     </button>
@@ -414,7 +441,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
         {/* Task Detail / Schedule Modal */}
         {selectedTask && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-                <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/50 animate-in zoom-in-95 duration-200">
+                <div className="bg-notion-bg w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-6 border-b border-notion-border pb-4">
                         <input 
                             value={editTitle}
@@ -438,7 +465,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                                         min={new Date().toISOString().split('T')[0]}
                                         value={scheduleStartDate}
                                         onChange={(e) => setScheduleStartDate(e.target.value)}
-                                        className="w-full p-2 bg-white rounded-lg border border-notion-border text-sm outline-none focus:ring-1 focus:ring-notion-accentText"
+                                        className="w-full p-2 bg-notion-bg rounded-lg border border-notion-border text-sm outline-none focus:ring-1 focus:ring-notion-accentText text-notion-text"
                                     />
                                 </div>
 
@@ -450,7 +477,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                                             min={scheduleStartDate}
                                             value={scheduleEndDate}
                                             onChange={(e) => setScheduleEndDate(e.target.value)}
-                                            className="w-full p-2 bg-white rounded-lg border border-notion-border text-sm outline-none focus:ring-1 focus:ring-notion-accentText"
+                                            className="w-full p-2 bg-notion-bg rounded-lg border border-notion-border text-sm outline-none focus:ring-1 focus:ring-notion-accentText text-notion-text"
                                         />
                                     </div>
                                 )}
@@ -480,7 +507,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                         </button>
                         <button 
                             onClick={() => handleDetailAction('save')}
-                            className="px-6 py-2 bg-notion-text text-white rounded-xl text-sm font-medium hover:opacity-90"
+                            className="px-6 py-2 bg-notion-text text-white dark:text-black rounded-xl text-sm font-medium hover:opacity-90"
                         >
                             保存修改
                         </button>

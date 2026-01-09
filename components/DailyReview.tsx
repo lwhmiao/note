@@ -100,7 +100,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
             </header>
 
             {/* Today's Section */}
-            <section className="bg-white rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0">
+            <section className="bg-notion-sidebar rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0">
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                     <Sparkles size={120} className="text-notion-accentText" />
                 </div>
@@ -135,7 +135,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
                 </div>
 
                 <textarea 
-                className="w-full h-48 bg-notion-sidebar/50 rounded-xl p-4 border-none outline-none resize-none text-notion-text leading-relaxed shadow-inner focus:ring-2 focus:ring-notion-accent/50 transition-all"
+                className="w-full h-48 bg-notion-bg/50 rounded-xl p-4 border-none outline-none resize-none text-notion-text leading-relaxed shadow-inner focus:ring-2 focus:ring-notion-accent/50 transition-all"
                 placeholder="今天发生了什么？点击右上方按钮让 AI 帮你总结..."
                 value={todaySummary?.content || ''}
                 onChange={(e) => onUpdateSummary(today, e.target.value)}
@@ -156,7 +156,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
                             </h4>
                             <div className="grid grid-cols-1 gap-4">
                                 {archiveItems.map(summary => (
-                                    <div key={summary.date} className="bg-white p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
+                                    <div key={summary.date} className="bg-notion-sidebar p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="text-xs font-bold text-notion-accentText">{summary.date}</div>
                                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -176,7 +176,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
                                         
                                         {editingDate === summary.date ? (
                                             <textarea 
-                                                className="w-full min-h-[100px] bg-notion-sidebar p-3 rounded-xl border border-notion-border outline-none resize-none text-sm text-notion-text focus:ring-2 focus:ring-notion-accent/50"
+                                                className="w-full min-h-[100px] bg-notion-bg p-3 rounded-xl border border-notion-border outline-none resize-none text-sm text-notion-text focus:ring-2 focus:ring-notion-accent/50"
                                                 value={editContent}
                                                 onChange={(e) => setEditContent(e.target.value)}
                                                 autoFocus
@@ -203,7 +203,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
 
         {/* Bottom Floating Action Bar (Archive Menu) - Fixed relative to Viewport/Parent */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center pointer-events-none">
-          <div className="bg-white/95 backdrop-blur-md px-1.5 py-1.5 rounded-full border border-notion-border shadow-float flex gap-2 pointer-events-auto">
+          <div className="bg-notion-bg/95 backdrop-blur-md px-1.5 py-1.5 rounded-full border border-notion-border shadow-float flex gap-2 pointer-events-auto">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all min-w-[120px] ${isMenuOpen ? 'bg-notion-accent text-notion-accentText' : 'bg-transparent text-notion-text hover:bg-notion-hover'}`}
@@ -217,7 +217,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
         {/* Popover Navigation Menu */}
         {isMenuOpen && (
           <div 
-            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 w-64 bg-white rounded-2xl shadow-float border border-notion-border p-2 animate-in slide-in-from-bottom-2 fade-in duration-200"
+            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 w-64 bg-notion-bg rounded-2xl shadow-float border border-notion-border p-2 animate-in slide-in-from-bottom-2 fade-in duration-200"
             onClick={(e) => e.stopPropagation()}
           >
              <div className="max-h-[50vh] overflow-y-auto">

@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
       className={`sidebar-item w-full flex items-center gap-3 px-5 py-3 text-sm font-medium rounded-2xl transition-all duration-200 mx-2 mb-1 w-[calc(100%-1rem)] ${
         currentView === view
           ? 'bg-notion-accent text-notion-accentText shadow-sm'
-          : 'text-notion-text hover:bg-white/50 hover:shadow-sm'
+          : 'text-notion-text hover:bg-notion-hover hover:shadow-sm'
       }`}
     >
       <Icon size={18} className={currentView === view ? 'text-notion-accentText' : 'text-notion-dim'} />
@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     <div className={baseClass}>
       <div className="p-8 flex items-center gap-3 mb-2 sidebar-header">
         <div className="relative group cursor-pointer">
-            {/* Dynamic theme colors used here */}
+            {/* Keeping the original icon structure as requested */}
             <div className="w-10 h-10 bg-notion-accent rounded-[14px] flex items-center justify-center text-notion-accentText shadow-sm transform transition-transform group-hover:rotate-6 group-hover:scale-105">
                 <NotebookText size={20} />
             </div>
@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
                 <Heart size={10} className="fill-notion-accentText text-notion-accentText opacity-60" />
             </div>
         </div>
-        <span className="font-display font-bold text-xl text-notion-text tracking-tight">小记 <span className="text-xs font-normal text-notion-dim opacity-70">LifeNote</span></span>
+        <span className="font-display font-bold text-xl text-notion-text tracking-tight">小记 <span className="text-xs font-normal text-notion-dim opacity-70">LifeOS</span></span>
       </div>
 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto sidebar-nav">
@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
       <div className="p-4 border-t border-notion-border sidebar-footer">
          <button 
            onClick={onOpenSettings}
-           className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium rounded-2xl text-notion-dim hover:bg-white/60 hover:text-notion-text hover:shadow-sm transition-all"
+           className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium rounded-2xl text-notion-dim hover:bg-notion-hover hover:text-notion-text hover:shadow-sm transition-all"
          >
            <Settings size={18} />
            <span>系统设置</span>

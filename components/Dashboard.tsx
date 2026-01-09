@@ -76,11 +76,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Today's Tasks - Takes up 7/12 columns */}
-        <section className="lg:col-span-7 bg-white rounded-3xl border border-notion-border p-8 shadow-soft relative group">
+        <section className="lg:col-span-7 bg-notion-sidebar rounded-3xl border border-notion-border p-8 shadow-soft relative group">
           <div className="flex items-center justify-between mb-6">
              <h3 className="text-xl font-bold text-notion-text">今日计划</h3>
              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium px-3 py-1 bg-notion-sidebar rounded-full text-notion-dim">
+                <span className="text-xs font-medium px-3 py-1 bg-notion-bg rounded-full text-notion-dim">
                     {completed.length}/{todayTasks.length} 完成
                 </span>
                 <button 
@@ -96,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
           <div className="space-y-3">
             {/* Quick Add Input */}
             {isAddingTask && (
-                <div className="flex items-center gap-3 p-3 bg-notion-sidebar/50 rounded-xl animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3 p-3 bg-notion-bg/50 rounded-xl animate-in fade-in slide-in-from-top-2">
                     <Circle size={22} className="text-notion-dim" />
                     <input 
                         autoFocus
@@ -113,7 +113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
             {todayTasks.length === 0 && !isAddingTask && (
               <div 
                 onClick={() => setIsAddingTask(true)}
-                className="py-12 text-center text-notion-dim italic border border-dashed border-notion-border rounded-2xl cursor-pointer hover:bg-notion-sidebar/50 transition-colors"
+                className="py-12 text-center text-notion-dim italic border border-dashed border-notion-border rounded-2xl cursor-pointer hover:bg-notion-bg/50 transition-colors"
               >
                   点击右上角 + 或此处添加任务
               </div>
@@ -140,7 +140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
         </section>
 
         {/* Daily Summary Card - Takes up 5/12 columns */}
-        <section className="lg:col-span-5 bg-gradient-to-br from-white to-notion-accent/30 rounded-3xl border border-notion-border p-8 shadow-soft flex flex-col relative overflow-hidden group h-fit min-h-[300px]">
+        <section className="lg:col-span-5 bg-gradient-to-br from-notion-sidebar to-notion-accent/30 rounded-3xl border border-notion-border p-8 shadow-soft flex flex-col relative overflow-hidden group h-fit min-h-[300px]">
            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
                 <Sparkles size={100} />
            </div>
@@ -150,7 +150,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
               {!todaySummary?.content && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); onGenerateSummary(); }}
-                    className="flex items-center gap-1 text-xs font-bold text-notion-accentText bg-white px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all"
+                    className="flex items-center gap-1 text-xs font-bold text-notion-accentText bg-notion-bg px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all"
                   >
                       <Sparkles size={12} /> 一键生成
                   </button>
@@ -159,7 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
 
           <div 
             onClick={goToDailyReview}
-            className="flex-1 p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 text-sm text-notion-text leading-loose whitespace-pre-wrap cursor-pointer hover:bg-white/80 transition-colors"
+            className="flex-1 p-6 bg-white/40 dark:bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20 text-sm text-notion-text leading-loose whitespace-pre-wrap cursor-pointer hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
           >
             {todaySummary?.content || (
                 <span className="text-notion-dim flex flex-col items-center justify-center h-full gap-2 py-8">

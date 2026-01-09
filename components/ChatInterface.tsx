@@ -275,53 +275,53 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   if (showSettings) {
       return (
         <div className="fixed inset-0 z-[70] bg-notion-bg flex flex-col">
-           <div className="p-4 border-b border-notion-border flex justify-between items-center bg-white">
+           <div className="p-4 border-b border-notion-border flex justify-between items-center bg-notion-sidebar">
              <h3 className="font-bold text-notion-text flex items-center gap-2 text-lg"><Settings size={20}/> 个性化设置</h3>
-             <button onClick={() => setShowSettings(false)} className="text-notion-dim hover:text-notion-text p-2 bg-notion-sidebar rounded-full"><X size={20}/></button>
+             <button onClick={() => setShowSettings(false)} className="text-notion-dim hover:text-notion-text p-2 bg-notion-hover rounded-full"><X size={20}/></button>
            </div>
            
            <div ref={settingsContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 max-w-3xl mx-auto w-full">
-              <section className="space-y-6 bg-white p-6 rounded-3xl shadow-sm border border-notion-border">
+              <section className="space-y-6 bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border">
                  <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Bot size={14}/> AI 角色设定</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-notion-text">AI 名字</label>
-                        <input className="w-full p-3 rounded-xl bg-notion-sidebar border-none text-sm focus:ring-2 focus:ring-notion-accent/50" value={tempSettings.aiName} onChange={e => setTempSettings({...tempSettings, aiName: e.target.value})}/>
+                        <input className="w-full p-3 rounded-xl bg-notion-bg border-none text-sm focus:ring-2 focus:ring-notion-accent/50 text-notion-text" value={tempSettings.aiName} onChange={e => setTempSettings({...tempSettings, aiName: e.target.value})}/>
                     </div>
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-notion-text">AI 头像</label>
                         <div className="flex gap-2">
-                            <input className="flex-1 p-3 rounded-xl bg-notion-sidebar border-none text-xs font-mono truncate" value={tempSettings.aiAvatarUrl} onChange={e => setTempSettings({...tempSettings, aiAvatarUrl: e.target.value})}/>
-                            <label className="p-3 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer"><Upload size={18} className="text-notion-dim"/><input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, 'aiAvatarUrl')} /></label>
+                            <input className="flex-1 p-3 rounded-xl bg-notion-bg border-none text-xs font-mono truncate text-notion-text" value={tempSettings.aiAvatarUrl} onChange={e => setTempSettings({...tempSettings, aiAvatarUrl: e.target.value})}/>
+                            <label className="p-3 bg-notion-bg hover:bg-notion-hover rounded-xl cursor-pointer"><Upload size={18} className="text-notion-dim"/><input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, 'aiAvatarUrl')} /></label>
                             {tempSettings.aiAvatarUrl && <img src={tempSettings.aiAvatarUrl} className="w-10 h-10 rounded-full object-cover border border-notion-border"/>}
                         </div>
                     </div>
                  </div>
-                 <textarea className="w-full p-4 rounded-xl bg-notion-sidebar border-none text-sm h-24 resize-none" value={tempSettings.aiPersona} onChange={e => setTempSettings({...tempSettings, aiPersona: e.target.value})}/>
+                 <textarea className="w-full p-4 rounded-xl bg-notion-bg border-none text-sm h-24 resize-none text-notion-text" value={tempSettings.aiPersona} onChange={e => setTempSettings({...tempSettings, aiPersona: e.target.value})}/>
               </section>
 
-              <section className="space-y-6 bg-white p-6 rounded-3xl shadow-sm border border-notion-border">
+              <section className="space-y-6 bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border">
                  <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><User size={14}/> 用户设定</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-notion-text">用户昵称</label>
-                        <input className="w-full p-3 rounded-xl bg-notion-sidebar border-none text-sm" value={tempSettings.userName} onChange={e => setTempSettings({...tempSettings, userName: e.target.value})}/>
+                        <input className="w-full p-3 rounded-xl bg-notion-bg border-none text-sm text-notion-text" value={tempSettings.userName} onChange={e => setTempSettings({...tempSettings, userName: e.target.value})}/>
                     </div>
                      <div className="space-y-2">
                         <label className="text-xs font-medium text-notion-text">用户头像</label>
                         <div className="flex gap-2">
-                            <input className="flex-1 p-3 rounded-xl bg-notion-sidebar border-none text-xs font-mono truncate" value={tempSettings.userAvatarUrl} onChange={e => setTempSettings({...tempSettings, userAvatarUrl: e.target.value})}/>
-                            <label className="p-3 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer"><Upload size={18} className="text-notion-dim"/><input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, 'userAvatarUrl')} /></label>
+                            <input className="flex-1 p-3 rounded-xl bg-notion-bg border-none text-xs font-mono truncate text-notion-text" value={tempSettings.userAvatarUrl} onChange={e => setTempSettings({...tempSettings, userAvatarUrl: e.target.value})}/>
+                            <label className="p-3 bg-notion-bg hover:bg-notion-hover rounded-xl cursor-pointer"><Upload size={18} className="text-notion-dim"/><input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, 'userAvatarUrl')} /></label>
                             {tempSettings.userAvatarUrl && <img src={tempSettings.userAvatarUrl} className="w-10 h-10 rounded-full object-cover border border-notion-border"/>}
                         </div>
                     </div>
                  </div>
-                 <textarea className="w-full p-4 rounded-xl bg-notion-sidebar border-none text-sm h-24 resize-none" value={tempSettings.userPersona} onChange={e => setTempSettings({...tempSettings, userPersona: e.target.value})}/>
+                 <textarea className="w-full p-4 rounded-xl bg-notion-bg border-none text-sm h-24 resize-none text-notion-text" value={tempSettings.userPersona} onChange={e => setTempSettings({...tempSettings, userPersona: e.target.value})}/>
               </section>
 
-              <section className="space-y-6 bg-white p-6 rounded-3xl shadow-sm border border-notion-border">
+              <section className="space-y-6 bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border">
                   <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Palette size={14}/> 记忆与外观</h4>
-                  <div className="p-4 bg-notion-sidebar rounded-2xl border border-notion-border space-y-3">
+                  <div className="p-4 bg-notion-bg rounded-2xl border border-notion-border space-y-3">
                      <div className="flex justify-between items-center">
                         <label className="text-xs font-bold text-notion-dim uppercase">上下文记忆深度 (RAG Window)</label>
                         <span className="text-xs font-mono font-bold text-notion-accentText">{tempSettings.historyLimit} 条</span>
@@ -331,8 +331,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <div className="space-y-2 pt-2 border-t border-notion-border/50">
                     <label className="text-xs font-medium text-notion-text flex items-center gap-1"><ImageIcon size={12}/> 聊天背景图</label>
                     <div className="flex gap-2">
-                        <input className="flex-1 p-3 rounded-xl bg-notion-sidebar border-none text-xs font-mono truncate" value={tempSettings.chatBackgroundImageUrl} onChange={e => setTempSettings({...tempSettings, chatBackgroundImageUrl: e.target.value})}/>
-                        <label className="p-3 bg-notion-sidebar hover:bg-notion-hover rounded-xl cursor-pointer"><Upload size={18} className="text-notion-dim"/><input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, 'chatBackgroundImageUrl')} /></label>
+                        <input className="flex-1 p-3 rounded-xl bg-notion-bg border-none text-xs font-mono truncate text-notion-text" value={tempSettings.chatBackgroundImageUrl} onChange={e => setTempSettings({...tempSettings, chatBackgroundImageUrl: e.target.value})}/>
+                        <label className="p-3 bg-notion-bg hover:bg-notion-hover rounded-xl cursor-pointer"><Upload size={18} className="text-notion-dim"/><input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, 'chatBackgroundImageUrl')} /></label>
                     </div>
                   </div>
                   <div className="space-y-2 pt-2 border-t border-notion-border/50">
@@ -340,7 +340,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         <label className="text-xs font-medium text-notion-text flex items-center gap-1">自定义 CSS</label>
                         <button onClick={handleCopyCss} className="text-xs flex items-center gap-1 text-notion-accentText hover:text-notion-text transition-colors">{copied ? <Check size={12}/> : <Copy size={12}/>}{copied ? "已复制" : "复制模板"}</button>
                      </div>
-                     <textarea className="w-full p-3 rounded-xl border-none text-xs font-mono h-32 bg-notion-sidebar placeholder:text-notion-dim/50" placeholder={cssTemplate} value={tempSettings.customCss} onChange={e => setTempSettings({...tempSettings, customCss: e.target.value})}/>
+                     <textarea className="w-full p-3 rounded-xl border-none text-xs font-mono h-32 bg-notion-bg placeholder:text-notion-dim/50 text-notion-text" placeholder={cssTemplate} value={tempSettings.customCss} onChange={e => setTempSettings({...tempSettings, customCss: e.target.value})}/>
                   </div>
               </section>
 
@@ -351,19 +351,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
            </div>
 
-           <div className="p-4 border-t border-notion-border bg-white flex justify-end">
-              <button onClick={handleSaveSettings} className="flex items-center gap-2 px-8 py-3 bg-notion-accentText text-white rounded-2xl font-bold shadow-lg shadow-pink-200/50 hover:opacity-90">
+           <div className="p-4 border-t border-notion-border bg-notion-sidebar flex justify-end">
+              <button onClick={handleSaveSettings} className="flex items-center gap-2 px-8 py-3 bg-notion-accentText text-white dark:text-black rounded-2xl font-bold shadow-lg shadow-pink-200/50 hover:opacity-90">
                  <Save size={18} /> 保存并生效
               </button>
            </div>
            
            {showClearConfirm && (
                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-                   <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+                   <div className="bg-notion-bg rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-notion-border">
                        <h3 className="text-lg font-bold text-notion-text mb-2">确定清空吗？</h3>
                        <p className="text-sm text-notion-dim mb-6">永久删除所有聊天记忆。</p>
                        <div className="flex gap-3">
-                           <button onClick={() => setShowClearConfirm(false)} className="flex-1 py-2.5 rounded-xl bg-notion-sidebar hover:bg-notion-hover">取消</button>
+                           <button onClick={() => setShowClearConfirm(false)} className="flex-1 py-2.5 rounded-xl bg-notion-sidebar hover:bg-notion-hover text-notion-text">取消</button>
                            <button onClick={() => { onClearHistory(); setShowClearConfirm(false); setShowSettings(false); }} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600">确认</button>
                        </div>
                    </div>
@@ -380,8 +380,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         backgroundPosition: 'center'
     }}>
       
-      {/* Header */}
-      <div className="relative z-10 p-3 border-b border-notion-border flex justify-between items-center bg-white/90 backdrop-blur-md">
+      {/* Header - Fixed to use theme bg instead of white for dark mode support */}
+      <div className="relative z-10 p-3 border-b border-notion-border flex justify-between items-center bg-notion-bg/90 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <img src={settings.aiAvatarUrl} alt="AI" className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" />
           <div className="flex flex-col">
@@ -477,7 +477,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                              else setActiveMenuId(msg.id);
                         }}
                         className={`rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm chat-bubble break-words break-all whitespace-pre-wrap select-text cursor-pointer transition-all ${
-                        isUser ? 'bg-notion-accentText text-white rounded-br-sm chat-bubble-user' : 
+                        isUser ? 'bg-notion-accentText text-white dark:text-black rounded-br-sm chat-bubble-user' : 
                         msg.isError ? 'bg-red-50 text-red-600 border border-red-100' : 
                         'bg-white text-notion-text border border-notion-border rounded-bl-sm chat-bubble-ai'
                     } ${isActive ? 'ring-2 ring-offset-2 ring-notion-accentText/50 scale-[1.02]' : 'hover:scale-[1.01]'}`}>
@@ -492,7 +492,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input */}
-      <div className="relative z-10 p-4 border-t border-notion-border bg-white/90 backdrop-blur-md flex justify-center">
+      <div className="relative z-10 p-4 border-t border-notion-border bg-notion-bg/90 backdrop-blur-md flex justify-center">
          
          <form onSubmit={handleSubmit} className="relative w-full max-w-4xl flex items-end">
             {pendingImage && (
@@ -503,7 +503,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
             
             <div className="flex-1 bg-notion-sidebar rounded-xl flex items-center gap-2 p-1.5 transition-all focus-within:ring-2 focus-within:ring-notion-accentText/20">
-                <label className="flex-shrink-0 p-2 rounded-lg text-notion-dim hover:bg-white hover:text-notion-accentText cursor-pointer transition-colors flex items-center justify-center" title="上传图片">
+                <label className="flex-shrink-0 p-2 rounded-lg text-notion-dim hover:bg-notion-hover hover:text-notion-accentText cursor-pointer transition-colors flex items-center justify-center" title="上传图片">
                     <ImageIcon size={20} />
                     <input type="file" accept="image/*" className="hidden" onChange={handleChatImageUpload} disabled={isLoading} />
                 </label>
@@ -525,7 +525,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             type="button"
                             onClick={() => onTriggerAI(true)}
                             disabled={isLoading}
-                            className="p-2 rounded-lg transition-all text-notion-dim hover:bg-white hover:text-notion-accentText"
+                            className="p-2 rounded-lg transition-all text-notion-dim hover:bg-notion-hover hover:text-notion-accentText"
                             title="重新生成回复"
                          >
                             <RotateCw size={18} />
@@ -536,7 +536,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         type="button"
                         onClick={() => onTriggerAI(false)}
                         disabled={isLoading}
-                        className={`p-2 rounded-lg transition-all ${lastMessageIsUser && !isLoading ? 'bg-notion-accentText text-white shadow-sm hover:opacity-90' : 'text-notion-dim hover:bg-white hover:text-notion-text opacity-50'}`}
+                        className={`p-2 rounded-lg transition-all ${lastMessageIsUser && !isLoading ? 'bg-notion-accentText text-white shadow-sm hover:opacity-90' : 'text-notion-dim hover:bg-notion-hover hover:text-notion-text opacity-50'}`}
                         title="让 AI 回复"
                     >
                         <Bot size={18} />
@@ -545,7 +545,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                    <button
                         type="submit"
                         disabled={(!input.trim() && !pendingImage) || isLoading}
-                        className="p-2 text-notion-dim hover:bg-white hover:text-notion-text rounded-lg transition-all disabled:opacity-30"
+                        className="p-2 text-notion-dim hover:bg-notion-hover hover:text-notion-text rounded-lg transition-all disabled:opacity-30"
                         title="发送消息"
                     >
                         <Send size={18} />

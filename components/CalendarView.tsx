@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { Task } from '../types';
 import { ChevronLeft, ChevronRight, Plus, X, Trash2, CheckCircle2 } from 'lucide-react';
@@ -97,7 +98,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     <div className="h-full flex flex-col p-6 bg-texture overflow-hidden">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-notion-text font-display">{year}年 {monthName}</h2>
-        <div className="flex gap-2 bg-white rounded-xl shadow-sm border border-notion-border p-1">
+        <div className="flex gap-2 bg-notion-sidebar rounded-xl shadow-sm border border-notion-border p-1">
           <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-notion-hover rounded-lg text-notion-dim"><ChevronLeft size={20} /></button>
           <button onClick={() => setCurrentDate(new Date())} className="px-3 text-sm hover:bg-notion-hover rounded-lg text-notion-text font-medium">今天</button>
           <button onClick={() => changeMonth(1)} className="p-2 hover:bg-notion-hover rounded-lg text-notion-dim"><ChevronRight size={20} /></button>
@@ -124,7 +125,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div 
                 key={dateStr} 
                 onClick={() => openAddModal(dateStr)}
-                className="bg-white p-2 min-h-[100px] flex flex-col group relative hover:bg-notion-accent/20 transition-colors cursor-pointer"
+                className="bg-notion-sidebar dark:bg-notion-bg p-2 min-h-[100px] flex flex-col group relative hover:bg-notion-accent/20 transition-colors cursor-pointer"
             >
               <div className="flex justify-between items-start mb-1">
                 <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-accentText text-white shadow-md' : 'text-notion-text'}`}>
@@ -139,7 +140,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     onClick={(e) => openEditModal(task, e)}
                     className={`text-xs px-2 py-1.5 rounded-md border-l-4 truncate transition-all shadow-sm ${
                       task.completed
-                        ? 'bg-gray-100 text-gray-400 border-gray-300 line-through'
+                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 line-through'
                         : stringToColorClass(task.title)
                     }`}
                   >
@@ -154,7 +155,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-              <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6">
+              <div className="bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20">
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-lg font-bold text-notion-text">{editingTask ? '编辑任务' : '新任务'}</h3>
                       <button onClick={() => setModalOpen(false)} className="text-notion-dim hover:text-notion-text"><X size={20}/></button>
@@ -195,7 +196,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                              </button>
                          </>
                       )}
-                      <button onClick={handleSave} className="flex-1 p-3 bg-notion-accentText text-white rounded-xl font-bold shadow-lg shadow-pink-200 hover:opacity-90">保存</button>
+                      <button onClick={handleSave} className="flex-1 p-3 bg-notion-accentText text-white dark:text-black rounded-xl font-bold shadow-lg shadow-pink-200 hover:opacity-90">保存</button>
                   </div>
               </div>
           </div>

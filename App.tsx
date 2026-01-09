@@ -81,19 +81,18 @@ const THEMES: Record<ThemeId, Record<string, string>> = {
         '--color-bg': '#121212',
         '--color-sidebar': '#1E1E1E',
         '--color-border': '#333333',
-        '--color-text': '#FFFFFF',      
-        '--color-dim': '#AAAAAA',
-        '--color-hover': '#2C2C2C',
-        '--color-accent': '#333333',
+        '--color-text': '#E0E0E0',      
+        '--color-dim': '#B0B0B0', 
+        '--color-hover': '#333333',
+        '--color-accent': '#2C2C2C', 
         '--color-accent-border': '#444444',
-        '--color-accent-text': '#E0E0E0',
+        '--color-accent-text': '#E0E0E0', // Gray-ish white, easier on eyes than pure white
     }
 };
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>(() => {
     const saved = localStorage.getItem('lifeos_state');
-    // Migration: ensure backlogTasks exists
     const loaded = saved ? JSON.parse(saved) : initialState;
     if (!loaded.backlogTasks) loaded.backlogTasks = [];
     return loaded;
@@ -134,6 +133,14 @@ export default function App() {
   useEffect(() => {
     const theme = THEMES[settings.themeId] || THEMES.sakura;
     const root = document.documentElement;
+    
+    // Toggle dark mode class on HTML element for Tailwind dark: prefix support
+    if (settings.themeId === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+
     Object.entries(theme).forEach(([key, value]) => {
       root.style.setProperty(key, String(value));
     });
@@ -202,6 +209,13 @@ export default function App() {
       if (!isMenuDragging) {
           setIsSidebarOpen(!isSidebarOpen);
       }
+  };
+
+  const handleFullImport = (data: any) => {
+     if (data.data) setAppState(data.data);
+     if (data.settings) setSettings(data.settings);
+     if (data.chat) setMessages(data.chat);
+     if (data.quote) setQuoteStr(data.quote);
   };
 
   // --- Task Logic ---
@@ -499,6 +513,7 @@ export default function App() {
           <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-0 pointer-events-none" />
       )}
       
+      {/* Mobile Menu Button */}
       <div 
          className="md:hidden fixed z-40 touch-none"
          style={{ left: menuPos.x, top: menuPos.y }}
@@ -507,11 +522,19 @@ export default function App() {
             onMouseDown={handleMenuMouseDown}
             onTouchStart={handleMenuMouseDown}
             onClick={handleMenuClick}
-            className="p-3 bg-white/90 rounded-2xl shadow-float border border-notion-border text-notion-text backdrop-blur-md active:scale-95 transition-transform"
+            className="p-3 bg-notion-sidebar/90 rounded-2xl shadow-float border border-notion-border text-notion-text backdrop-blur-md active:scale-95 transition-transform"
           >
             <Menu size={24} />
           </button>
       </div>
+      
+      {/* Overlay for Mobile Sidebar */}
+      {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+      )}
 
       <div className="relative z-10 flex h-full w-full">
           <Sidebar 
@@ -523,7 +546,7 @@ export default function App() {
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
 
-          <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-white/50 md:bg-white/40 md:rounded-l-[3rem] shadow-2xl shadow-black/5 md:my-3 md:mr-3 border border-notion-border transition-all backdrop-blur-sm">
+          <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-notion-sidebar/50 md:bg-notion-sidebar/40 md:rounded-l-[3rem] shadow-2xl shadow-black/5 md:my-3 md:mr-3 border border-notion-border transition-all backdrop-blur-sm">
             <div className="flex-1 overflow-hidden relative">
               {currentView === ViewMode.DASHBOARD && (
                 <Dashboard 
@@ -598,7 +621,10 @@ export default function App() {
         onSaveSettings={setSettings}
         appState={appState}
         onImportState={(newState) => { setAppState(newState); setMessages([]); }}
+        onImportFullData={handleFullImport}
         onResetData={handleResetData}
+        currentMessages={messages}
+        currentQuote={quoteStr}
       />
       
     </div>
