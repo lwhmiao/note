@@ -18,28 +18,28 @@ interface PlanBoardProps {
 const MORANDI_COLORS = {
   // Q1: Muted Red/Pink -> Desaturated to almost gray-pink
   [Quadrant.Q1]: { 
-      bg: 'bg-[#F0EBEB]/80 dark:bg-white/10', 
+      bg: 'bg-[#F0EBEB]/40 dark:bg-white/10', 
       border: 'border-[#E0D5D5] dark:border-white/10', 
       text: 'text-[#524545] dark:text-[#E0E0E0]', 
       badge: 'bg-[#E0D5D5] text-[#524545]' 
   }, 
   // Q2: Muted Blue/Grey
   [Quadrant.Q2]: { 
-      bg: 'bg-[#E6F0F2]/80 dark:bg-white/5', 
+      bg: 'bg-[#E6F0F2]/40 dark:bg-white/5', 
       border: 'border-[#D0E0E6] dark:border-white/10', 
       text: 'text-[#3A4A5C] dark:text-[#D0D0D0]', 
       badge: 'bg-[#D0E0E6] text-[#3A4A5C]' 
   }, 
   // Q3: Muted Beige/Yellow
   [Quadrant.Q3]: { 
-      bg: 'bg-[#F2F0E6]/80 dark:bg-white/5', 
+      bg: 'bg-[#F2F0E6]/40 dark:bg-white/5', 
       border: 'border-[#E6E0D0] dark:border-white/10', 
       text: 'text-[#5C553A] dark:text-[#D0D0D0]', 
       badge: 'bg-[#E6E0D0] text-[#5C553A]' 
   }, 
   // Q4: Muted Neutral Gray
   [Quadrant.Q4]: { 
-      bg: 'bg-[#F0F0F0]/80 dark:bg-white/[0.02]', 
+      bg: 'bg-[#F0F0F0]/40 dark:bg-white/[0.02]', 
       border: 'border-[#E0E0E0] dark:border-white/5', 
       text: 'text-[#5C5C5C] dark:text-[#A0A0A0]', 
       badge: 'bg-[#E0E0E0] text-[#5C5C5C]' 
@@ -325,7 +325,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
         {/* Board Area */}
         <div className="flex-1 p-4 md:p-6 overflow-hidden relative">
              {/* Desktop is always grid, Mobile depends on toggle */}
-             <div className={`h-full w-full gap-4 ${viewMode === 'grid' || window.innerWidth >= 768 ? 'grid grid-cols-2 grid-rows-2' : 'flex flex-col space-y-4 overflow-y-auto pb-20'}`}>
+             <div className={`h-full w-full gap-2 ${viewMode === 'grid' || window.innerWidth >= 768 ? 'grid grid-cols-2 grid-rows-2' : 'flex flex-col space-y-4 overflow-y-auto pb-20'}`}>
                  <QuadrantSection q={Quadrant.Q1} />
                  <QuadrantSection q={Quadrant.Q2} />
                  <QuadrantSection q={Quadrant.Q3} />

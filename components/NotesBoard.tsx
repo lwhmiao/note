@@ -109,7 +109,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && executeSearch()}
-                        className="w-full pl-9 pr-4 py-2.5 bg-notion-sidebar rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text placeholder:text-notion-dim/50"
+                        className="w-full pl-9 pr-4 py-2.5 bg-white/80 dark:bg-notion-sidebar rounded-xl border border-notion-border focus:ring-2 focus:ring-notion-accentText/20 outline-none text-sm transition-all shadow-sm text-notion-text placeholder:text-notion-dim/50 backdrop-blur-xl"
                     />
                 </div>
                 <button 
@@ -128,10 +128,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                 <button
                 key={cat.id}
                 onClick={() => setActiveType(cat.id as any)}
-                className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border whitespace-nowrap flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border whitespace-nowrap flex items-center gap-2 backdrop-blur-xl ${
                     activeType === cat.id
                     ? 'bg-notion-text border-notion-text text-notion-bg shadow-md'
-                    : 'bg-notion-sidebar border-notion-border text-notion-dim hover:border-notion-accentText hover:text-notion-accentText'
+                    : 'bg-white/80 dark:bg-notion-sidebar border-notion-border text-notion-dim hover:border-notion-accentText hover:text-notion-accentText'
                 }`}
                 >
                 {cat.icon && <cat.icon size={14}/>}
@@ -145,7 +145,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                 <div 
                     key={note.id} 
                     onClick={() => openNote(note)}
-                    className="break-inside-avoid bg-white/80 dark:bg-notion-sidebar p-6 rounded-2xl border border-notion-border shadow-sm hover:shadow-soft hover:border-notion-accentBorder transition-all cursor-pointer group hover:-translate-y-1"
+                    className="break-inside-avoid bg-white/80 dark:bg-notion-sidebar p-6 rounded-2xl border border-notion-border shadow-sm hover:shadow-soft hover:border-notion-accentBorder transition-all cursor-pointer group hover:-translate-y-1 backdrop-blur-sm"
                 >
                     <div className="flex items-center justify-between mb-4">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full text-notion-accentText bg-notion-accent/50 border border-notion-accentBorder`}>
