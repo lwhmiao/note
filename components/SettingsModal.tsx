@@ -207,9 +207,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-notion-text/20 backdrop-blur-sm p-4">
-      <div className="bg-notion-bg w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 flex flex-col max-h-[90vh]">
+      <div className="bg-white/80 dark:bg-notion-bg backdrop-blur-xl w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 flex flex-col max-h-[90vh] transition-colors">
         
-        <div className="p-6 border-b border-notion-border flex justify-between items-center bg-notion-sidebar">
+        <div className="p-6 border-b border-notion-border flex justify-between items-center bg-white/60 dark:bg-notion-sidebar transition-colors">
           <h2 className="text-xl font-display font-bold text-notion-text">系统设置</h2>
           <button type="button" onClick={onClose} className="p-2 hover:bg-notion-hover rounded-full transition-colors text-notion-dim">
             <X size={20} />
@@ -333,7 +333,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-4 p-5 bg-notion-sidebar rounded-2xl border border-notion-border">
+              <div className="space-y-4 p-5 bg-white/60 dark:bg-notion-sidebar rounded-2xl border border-notion-border transition-colors">
                 <div className="flex justify-between items-center">
                     <h3 className="text-sm font-bold text-notion-text">配置详情</h3>
                     {localSettings.presets.length > 1 && (
@@ -449,7 +449,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* --- Data Tab --- */}
           {activeTab === 'data' && (
             <div className="space-y-6">
-              <div className="p-6 bg-notion-sidebar rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-green-200 transition-colors group">
+              <div className="p-6 bg-white/60 dark:bg-notion-sidebar rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-green-200 transition-colors group">
                  <div className="p-3 bg-green-50 rounded-full text-green-600 group-hover:scale-110 transition-transform">
                     <Download size={24} />
                  </div>
@@ -462,7 +462,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                  </button>
               </div>
 
-              <div className="p-6 bg-notion-sidebar rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-orange-200 transition-colors group">
+              <div className="p-6 bg-white/60 dark:bg-notion-sidebar rounded-2xl border border-notion-border shadow-sm flex flex-col items-center text-center gap-4 hover:border-orange-200 transition-colors group">
                  <div className="p-3 bg-orange-50 rounded-full text-orange-600 group-hover:scale-110 transition-transform">
                     <Upload size={24} />
                  </div>
@@ -494,7 +494,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         </div>
 
-        <div className="p-6 border-t border-notion-border bg-notion-sidebar flex justify-end">
+        <div className="p-6 border-t border-notion-border bg-white/60 dark:bg-notion-sidebar flex justify-end transition-colors">
           <button
             type="button"
             onClick={handleSave}

@@ -224,7 +224,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
       {/* Create Modal */}
       {isCreating && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/20 backdrop-blur-sm p-4">
-              <div className="bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl p-6 border border-white/20">
+              <div className="bg-white/80 dark:bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl p-6 border border-white/20 backdrop-blur-xl transition-colors">
                   <div className="flex justify-between items-center mb-4">
                       <h3 className="font-bold text-lg text-notion-text">记一笔</h3>
                       <button onClick={() => setIsCreating(false)}><X size={20} className="text-notion-dim hover:text-notion-text"/></button>
@@ -259,8 +259,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
       {/* Detail/Edit Modal */}
       {selectedNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/20 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
-          <div className="bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl border border-white/20 flex flex-col max-h-[85vh] overflow-hidden">
-            <div className="p-4 border-b border-notion-border flex justify-between items-center bg-notion-sidebar/50">
+          <div className="bg-white/80 dark:bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl border border-white/20 flex flex-col max-h-[85vh] overflow-hidden backdrop-blur-xl transition-colors">
+            <div className="p-4 border-b border-notion-border flex justify-between items-center bg-white/60 dark:bg-notion-sidebar/50 transition-colors">
               <div className="flex items-center gap-2">
                  {isEditing ? (
                    <span className="text-sm font-bold text-notion-text">编辑笔记</span>
@@ -296,7 +296,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                )}
             </div>
 
-            <div className="p-4 border-t border-notion-border bg-notion-sidebar/30 flex justify-between items-center">
+            <div className="p-4 border-t border-notion-border bg-white/60 dark:bg-notion-sidebar/30 flex justify-between items-center transition-colors">
                <button 
                  onClick={() => {
                     if(confirm("确定删除这条笔记吗？")) {

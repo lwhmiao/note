@@ -504,12 +504,14 @@ export default function App() {
         style={{ 
             backgroundColor: 'var(--color-bg)', 
             color: 'var(--color-text)',
-            backgroundImage: settings.globalBackgroundImageUrl ? `url(${settings.globalBackgroundImageUrl})` : 'none',
+            // Only show background image if NOT in dark mode
+            backgroundImage: (settings.themeId !== 'dark' && settings.globalBackgroundImageUrl) ? `url(${settings.globalBackgroundImageUrl})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
         }}
     >
-      {settings.globalBackgroundImageUrl && (
+      {/* Only show overlay texture/blur if image is present AND not dark mode */}
+      {(settings.themeId !== 'dark' && settings.globalBackgroundImageUrl) && (
           <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-0 pointer-events-none" />
       )}
       

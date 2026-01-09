@@ -274,14 +274,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // --- Settings Panel ---
   if (showSettings) {
       return (
-        <div className="fixed inset-0 z-[70] bg-notion-bg flex flex-col">
-           <div className="p-4 border-b border-notion-border flex justify-between items-center bg-notion-sidebar">
+        <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-notion-bg backdrop-blur-xl flex flex-col transition-colors">
+           <div className="p-4 border-b border-notion-border flex justify-between items-center bg-white/60 dark:bg-notion-sidebar transition-colors">
              <h3 className="font-bold text-notion-text flex items-center gap-2 text-lg"><Settings size={20}/> 个性化设置</h3>
              <button onClick={() => setShowSettings(false)} className="text-notion-dim hover:text-notion-text p-2 bg-notion-hover rounded-full"><X size={20}/></button>
            </div>
            
            <div ref={settingsContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 max-w-3xl mx-auto w-full">
-              <section className="space-y-6 bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border">
+              <section className="space-y-6 bg-white/60 dark:bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border transition-colors">
                  <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Bot size={14}/> AI 角色设定</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -300,7 +300,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                  <textarea className="w-full p-4 rounded-xl bg-notion-bg border-none text-sm h-24 resize-none text-notion-text" value={tempSettings.aiPersona} onChange={e => setTempSettings({...tempSettings, aiPersona: e.target.value})}/>
               </section>
 
-              <section className="space-y-6 bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border">
+              <section className="space-y-6 bg-white/60 dark:bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border transition-colors">
                  <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><User size={14}/> 用户设定</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -319,7 +319,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                  <textarea className="w-full p-4 rounded-xl bg-notion-bg border-none text-sm h-24 resize-none text-notion-text" value={tempSettings.userPersona} onChange={e => setTempSettings({...tempSettings, userPersona: e.target.value})}/>
               </section>
 
-              <section className="space-y-6 bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border">
+              <section className="space-y-6 bg-white/60 dark:bg-notion-sidebar p-6 rounded-3xl shadow-sm border border-notion-border transition-colors">
                   <h4 className="text-xs font-bold text-notion-dim uppercase tracking-wider flex items-center gap-2"><Palette size={14}/> 记忆与外观</h4>
                   <div className="p-4 bg-notion-bg rounded-2xl border border-notion-border space-y-3">
                      <div className="flex justify-between items-center">
@@ -351,7 +351,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
            </div>
 
-           <div className="p-4 border-t border-notion-border bg-notion-sidebar flex justify-end">
+           <div className="p-4 border-t border-notion-border bg-white/60 dark:bg-notion-sidebar flex justify-end transition-colors">
               <button onClick={handleSaveSettings} className="flex items-center gap-2 px-8 py-3 bg-notion-accentText text-white dark:text-black rounded-2xl font-bold shadow-lg shadow-pink-200/50 hover:opacity-90">
                  <Save size={18} /> 保存并生效
               </button>
@@ -375,7 +375,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] bg-notion-bg flex flex-col overflow-x-hidden" style={{ 
-        backgroundImage: settings.chatBackgroundImageUrl ? `url(${settings.chatBackgroundImageUrl})` : 'none',
+        backgroundImage: (settings.themeId !== 'dark' && settings.chatBackgroundImageUrl) ? `url(${settings.chatBackgroundImageUrl})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center'
     }}>

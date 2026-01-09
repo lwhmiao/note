@@ -18,28 +18,28 @@ interface PlanBoardProps {
 const MORANDI_COLORS = {
   // Q1: Muted Red/Pink -> Desaturated to almost gray-pink
   [Quadrant.Q1]: { 
-      bg: 'bg-[#F0EBEB] dark:bg-white/10', 
+      bg: 'bg-[#F0EBEB]/80 dark:bg-white/10', 
       border: 'border-[#E0D5D5] dark:border-white/10', 
       text: 'text-[#524545] dark:text-[#E0E0E0]', 
       badge: 'bg-[#E0D5D5] text-[#524545]' 
   }, 
   // Q2: Muted Blue/Grey
   [Quadrant.Q2]: { 
-      bg: 'bg-[#E6F0F2] dark:bg-white/5', 
+      bg: 'bg-[#E6F0F2]/80 dark:bg-white/5', 
       border: 'border-[#D0E0E6] dark:border-white/10', 
       text: 'text-[#3A4A5C] dark:text-[#D0D0D0]', 
       badge: 'bg-[#D0E0E6] text-[#3A4A5C]' 
   }, 
   // Q3: Muted Beige/Yellow
   [Quadrant.Q3]: { 
-      bg: 'bg-[#F2F0E6] dark:bg-white/5', 
+      bg: 'bg-[#F2F0E6]/80 dark:bg-white/5', 
       border: 'border-[#E6E0D0] dark:border-white/10', 
       text: 'text-[#5C553A] dark:text-[#D0D0D0]', 
       badge: 'bg-[#E6E0D0] text-[#5C553A]' 
   }, 
   // Q4: Muted Neutral Gray
   [Quadrant.Q4]: { 
-      bg: 'bg-[#F0F0F0] dark:bg-white/[0.02]', 
+      bg: 'bg-[#F0F0F0]/80 dark:bg-white/[0.02]', 
       border: 'border-[#E0E0E0] dark:border-white/5', 
       text: 'text-[#5C5C5C] dark:text-[#A0A0A0]', 
       badge: 'bg-[#E0E0E0] text-[#5C5C5C]' 
@@ -284,7 +284,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
                             onTouchEnd={handleTouchEndCheck}
                             
                             onClick={() => openDetailModal(task)}
-                            className={`bg-notion-sidebar dark:bg-notion-bg backdrop-blur-sm p-3 rounded-xl border border-white/20 shadow-sm cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform group select-none ${isBeingDraggedMobile ? 'opacity-30' : 'opacity-100'}`}
+                            className={`bg-white/80 dark:bg-notion-bg backdrop-blur-sm p-3 rounded-xl border border-white/20 shadow-sm cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform group select-none ${isBeingDraggedMobile ? 'opacity-30' : 'opacity-100'}`}
                             onContextMenu={(e) => e.preventDefault()} // Prevent context menu
                         >
                             <div className="flex justify-between items-start gap-2 pointer-events-none">
@@ -367,7 +367,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
         {/* Add Modal */}
         {isAddModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-                <div className="bg-notion-bg w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200">
+                <div className="bg-white/80 dark:bg-notion-bg w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200 backdrop-blur-xl transition-colors">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-notion-text">新增待安排计划</h3>
                         <button onClick={() => setIsAddModalOpen(false)} className="text-notion-dim hover:text-notion-text"><X size={20}/></button>
@@ -441,7 +441,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
         {/* Task Detail / Schedule Modal */}
         {selectedTask && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-                <div className="bg-notion-bg w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200">
+                <div className="bg-white/80 dark:bg-notion-bg w-full max-w-md rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200 backdrop-blur-xl transition-colors">
                     <div className="flex justify-between items-center mb-6 border-b border-notion-border pb-4">
                         <input 
                             value={editTitle}

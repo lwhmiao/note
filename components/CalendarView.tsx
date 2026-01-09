@@ -155,7 +155,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-              <div className="bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20">
+              <div className="bg-white/80 dark:bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20 backdrop-blur-xl transition-colors">
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-lg font-bold text-notion-text">{editingTask ? '编辑任务' : '新任务'}</h3>
                       <button onClick={() => setModalOpen(false)} className="text-notion-dim hover:text-notion-text"><X size={20}/></button>
