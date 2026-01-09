@@ -95,30 +95,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col p-2 md:p-6 bg-texture overflow-hidden">
-      <div className="flex items-center justify-between mb-4 md:mb-6 shrink-0">
-        <h2 className="text-xl md:text-2xl font-bold text-notion-text font-display">{year}年 {monthName}</h2>
-        <div className="flex gap-2 bg-white/80 dark:bg-notion-sidebar rounded-xl shadow-sm border border-notion-border p-1">
+    <div className="h-full flex flex-col p-6 bg-texture overflow-hidden">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-notion-text font-display">{year}年 {monthName}</h2>
+        <div className="flex gap-2 bg-white/80 dark:bg-notion-sidebar rounded-xl shadow-sm border border-notion-border p-1 backdrop-blur-xl transition-colors">
           <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-notion-hover rounded-lg text-notion-dim"><ChevronLeft size={20} /></button>
           <button onClick={() => setCurrentDate(new Date())} className="px-3 text-sm hover:bg-notion-hover rounded-lg text-notion-text font-medium">今天</button>
           <button onClick={() => changeMonth(1)} className="p-2 hover:bg-notion-hover rounded-lg text-notion-dim"><ChevronRight size={20} /></button>
         </div>
       </div>
 
-      {/* Grid Header */}
-      <div className="grid grid-cols-7 gap-px border border-notion-border rounded-t-2xl overflow-hidden shrink-0 bg-notion-border">
+      <div className="grid grid-cols-7 gap-px bg-notion-border border border-notion-border flex-1 rounded-2xl overflow-hidden shadow-sm">
         {['日', '一', '二', '三', '四', '五', '六'].map(day => (
-          <div key={day} className="bg-white/80 dark:bg-notion-sidebar p-2 md:p-3 text-xs font-bold text-notion-dim text-center uppercase tracking-wider">
+          <div key={day} className="bg-white/80 dark:bg-notion-sidebar p-3 text-xs font-bold text-notion-dim text-center uppercase tracking-wider backdrop-blur-sm transition-colors">
             {day}
           </div>
         ))}
-      </div>
 
-      {/* Grid Body - Scrollable */}
-      <div className="grid grid-cols-7 gap-px bg-notion-border border-x border-b border-notion-border flex-1 rounded-b-2xl overflow-y-auto overscroll-contain">
         {days.map((date, idx) => {
-          if (!date) return <div key={`pad-${idx}`} className="bg-white/60 dark:bg-notion-bg min-h-[80px] md:min-h-[100px]" />;
+          if (!date) return <div key={`pad-${idx}`} className="bg-white/60 dark:bg-notion-bg min-h-[100px]" />;
 
+          // Use Local Date string creation
           const dateStr = toLocalDateStr(date);
           const todayStr = toLocalDateStr(new Date());
           const isToday = todayStr === dateStr;
@@ -128,23 +125,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div 
                 key={dateStr} 
                 onClick={() => openAddModal(dateStr)}
-                // Performance Optimization: Removed hover:bg-white, transition-colors, group
-                // Fixed background to bg-white/80 as requested
-                className="bg-white/80 dark:bg-notion-bg p-1 md:p-2 min-h-[80px] md:min-h-[100px] flex flex-col relative cursor-pointer"
+                className="bg-white/80 dark:bg-notion-bg p-2 min-h-[100px] flex flex-col group relative hover:bg-notion-accent/20 transition-colors cursor-pointer backdrop-blur-sm"
             >
               <div className="flex justify-between items-start mb-1">
-                <span className={`text-xs md:text-sm font-medium w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-accentText text-white shadow-md' : 'text-notion-text'}`}>
+                <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-accentText text-white shadow-md' : 'text-notion-text'}`}>
                   {date.getDate()}
                 </span>
               </div>
 
-              <div className="space-y-1 overflow-y-auto max-h-[80px] md:max-h-[120px] scrollbar-hide">
+              <div className="space-y-1 overflow-y-auto max-h-[120px] scrollbar-hide">
                 {dayTasks.map(task => (
                   <div
                     key={task.id}
                     onClick={(e) => openEditModal(task, e)}
-                    // Performance Optimization: Removed transition-all, shadow-sm
-                    className={`text-[10px] md:text-xs px-1.5 py-1 rounded-md border-l-2 md:border-l-4 truncate ${
+                    className={`text-xs px-2 py-1.5 rounded-md border-l-4 truncate transition-all shadow-sm ${
                       task.completed
                         ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 line-through'
                         : stringToColorClass(task.title)
@@ -161,7 +155,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-              <div className="bg-white/95 dark:bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20 transition-colors">
+              <div className="bg-white/80 dark:bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20 backdrop-blur-xl transition-colors">
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-lg font-bold text-notion-text">{editingTask ? '编辑任务' : '新任务'}</h3>
                       <button onClick={() => setModalOpen(false)} className="text-notion-dim hover:text-notion-text"><X size={20}/></button>
