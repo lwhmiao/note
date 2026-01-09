@@ -121,7 +121,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="grid grid-cols-7 bg-transparent border-t border-l border-notion-border flex-1 rounded-2xl overflow-y-auto">
         {['日', '一', '二', '三', '四', '五', '六'].map(day => (
           /* Header: Added border-r and border-b for grid lines */
-          <div key={day} className="bg-white/80 dark:bg-notion-sidebar p-3 text-xs font-bold text-notion-dim text-center uppercase tracking-wider sticky top-0 z-10 backdrop-blur-none border-r border-b border-notion-border">
+          <div key={day} className="bg-white/80 dark:bg-notion-sidebar p-3 text-xs font-bold text-notion-dim text-center uppercase tracking-wider sticky top-0 z-10 backdrop-blur-none border-r border-b border-notion-border flex items-center justify-center">
             {day}
           </div>
         ))}
