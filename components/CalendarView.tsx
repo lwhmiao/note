@@ -60,6 +60,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const d = [];
     for (let i = 0; i < firstDayOfMonth; i++) d.push(null);
     for (let i = 1; i <= daysInMonth; i++) d.push(new Date(year, currentDate.getMonth(), i));
+    // Fill the last row with nulls to ensure complete grid borders
+    while (d.length % 7 !== 0) d.push(null);
     return d;
   }, [currentDate, year, daysInMonth, firstDayOfMonth]);
 
@@ -115,31 +117,32 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Grid Container: Changed overflow-hidden to overflow-y-auto to allow scrolling without changing layout size */}
-      <div className="grid grid-cols-7 gap-px bg-notion-border border border-notion-border flex-1 rounded-2xl overflow-y-auto">
+      {/* Grid Container: Changed to border-based grid to allow transparent cells over texture */}
+      <div className="grid grid-cols-7 bg-transparent border-t border-l border-notion-border flex-1 rounded-2xl overflow-y-auto">
         {['日', '一', '二', '三', '四', '五', '六'].map(day => (
-          // PERFORMANCE: Removed backdrop-blur-sm. Added sticky top-0.
-          <div key={day} className="bg-white/80 dark:bg-notion-sidebar p-3 text-xs font-bold text-notion-dim text-center uppercase tracking-wider sticky top-0 z-10 backdrop-blur-none">
+          /* Header: Added border-r and border-b for grid lines */
+          <div key={day} className="bg-white/80 dark:bg-notion-sidebar p-3 text-xs font-bold text-notion-dim text-center uppercase tracking-wider sticky top-0 z-10 backdrop-blur-none border-r border-b border-notion-border">
             {day}
           </div>
         ))}
 
         {days.map((date, idx) => {
-          if (!date) return <div key={`pad-${idx}`} className="bg-white/60 dark:bg-notion-bg min-h-[100px]" />;
+          // Use border-based grid lines instead of gap to prevent background bleed-through
+          const baseCellClass = "bg-white/80 dark:bg-notion-bg min-h-[100px] border-r border-b border-notion-border";
+          
+          if (!date) return <div key={`pad-${idx}`} className={baseCellClass} />;
 
           const dateStr = toLocalDateStr(date);
           const todayStr = toLocalDateStr(new Date());
           const isToday = todayStr === dateStr;
-          // OPTIMIZATION: Use O(1) lookup instead of filter
           const dayTasks = tasksByDate[dateStr] || [];
 
           return (
             <div 
                 key={dateStr} 
                 onClick={() => openAddModal(dateStr)}
-                // PERFORMANCE: Removed 'group', 'hover:bg...', 'transition-colors', 'backdrop-blur-sm'.
-                // Fixed bg-white/80 as requested.
-                className="bg-white/80 dark:bg-notion-bg p-2 min-h-[100px] flex flex-col relative cursor-pointer"
+                // Fixed bg-white/80 without underlying grey container
+                className={`${baseCellClass} p-2 flex flex-col relative cursor-pointer`}
             >
               <div className="flex justify-between items-start mb-1">
                 <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-accentText text-white shadow-md' : 'text-notion-text'}`}>
@@ -152,7 +155,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   <div
                     key={task.id}
                     onClick={(e) => openEditModal(task, e)}
-                    // PERFORMANCE: Removed 'shadow-sm', 'transition-all'
                     className={`text-xs px-2 py-1.5 rounded-md border-l-4 truncate ${
                       task.completed
                         ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 line-through'
@@ -170,7 +172,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-              {/* Removed backdrop-blur-xl from modal itself to help low-end devices */}
               <div className="bg-white/95 dark:bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20 transition-colors">
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-lg font-bold text-notion-text">{editingTask ? '编辑任务' : '新任务'}</h3>

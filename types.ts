@@ -106,7 +106,7 @@ export const DEFAULT_PRESET: ApiPreset = {
   id: 'default',
   name: 'Google Official',
   apiKey: '',
-  baseUrl: 'https://generativelanguage.googleapis.com',
+  baseUrl: '',
   model: 'gemini-1.5-flash',
   disableTools: false
 };
