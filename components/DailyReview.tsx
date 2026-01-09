@@ -100,7 +100,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
             </header>
 
             {/* Today's Section */}
-            <section className="bg-notion-sidebar rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0">
+            <section className="bg-white/80 dark:bg-notion-sidebar rounded-3xl p-8 border border-notion-border shadow-soft mb-12 relative overflow-hidden flex-shrink-0 transition-colors">
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                     <Sparkles size={120} className="text-notion-accentText" />
                 </div>
@@ -156,7 +156,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({ summaries, onUpdateSum
                             </h4>
                             <div className="grid grid-cols-1 gap-4">
                                 {archiveItems.map(summary => (
-                                    <div key={summary.date} className="bg-notion-sidebar p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
+                                    <div key={summary.date} className="bg-white/80 dark:bg-notion-sidebar p-6 rounded-2xl border border-notion-border hover:shadow-soft transition-all group relative">
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="text-xs font-bold text-notion-accentText">{summary.date}</div>
                                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Today's Tasks - Takes up 7/12 columns */}
-        <section className="lg:col-span-7 bg-notion-sidebar rounded-3xl border border-notion-border p-8 shadow-soft relative group">
+        <section className="lg:col-span-7 bg-white/80 dark:bg-notion-sidebar rounded-3xl border border-notion-border p-8 shadow-soft relative group transition-colors">
           <div className="flex items-center justify-between mb-6">
              <h3 className="text-xl font-bold text-notion-text">今日计划</h3>
              <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
         </section>
 
         {/* Daily Summary Card - Takes up 5/12 columns */}
-        <section className="lg:col-span-5 bg-gradient-to-br from-notion-sidebar to-notion-accent/30 rounded-3xl border border-notion-border p-8 shadow-soft flex flex-col relative overflow-hidden group h-fit min-h-[300px]">
+        <section className="lg:col-span-5 bg-white/80 dark:bg-notion-sidebar rounded-3xl border border-notion-border p-8 shadow-soft flex flex-col relative overflow-hidden group h-fit min-h-[300px] transition-colors">
            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
                 <Sparkles size={100} />
            </div>

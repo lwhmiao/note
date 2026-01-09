@@ -125,7 +125,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div 
                 key={dateStr} 
                 onClick={() => openAddModal(dateStr)}
-                className="bg-notion-sidebar dark:bg-notion-bg p-2 min-h-[100px] flex flex-col group relative hover:bg-notion-accent/20 transition-colors cursor-pointer"
+                className="bg-white/80 dark:bg-notion-bg p-2 min-h-[100px] flex flex-col group relative hover:bg-notion-accent/20 transition-colors cursor-pointer"
             >
               <div className="flex justify-between items-start mb-1">
                 <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-accentText text-white shadow-md' : 'text-notion-text'}`}>

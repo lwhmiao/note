@@ -145,7 +145,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({ notes, onDeleteNote, onA
                 <div 
                     key={note.id} 
                     onClick={() => openNote(note)}
-                    className="break-inside-avoid bg-notion-sidebar p-6 rounded-2xl border border-notion-border shadow-sm hover:shadow-soft hover:border-notion-accentBorder transition-all cursor-pointer group hover:-translate-y-1"
+                    className="break-inside-avoid bg-white/80 dark:bg-notion-sidebar p-6 rounded-2xl border border-notion-border shadow-sm hover:shadow-soft hover:border-notion-accentBorder transition-all cursor-pointer group hover:-translate-y-1"
                 >
                     <div className="flex items-center justify-between mb-4">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full text-notion-accentText bg-notion-accent/50 border border-notion-accentBorder`}>

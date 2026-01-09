@@ -531,12 +531,12 @@ export default function App() {
       {/* Overlay for Mobile Sidebar */}
       {isSidebarOpen && (
           <div 
-            className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-30 bg-transparent md:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
       )}
 
-      <div className="relative z-10 flex h-full w-full">
+      <div className="relative flex h-full w-full">
           <Sidebar 
             currentView={currentView} 
             setView={(v) => { setCurrentView(v); setIsSidebarOpen(false); }}
