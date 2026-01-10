@@ -334,9 +334,25 @@ export default function App() {
 
   const handleRefreshQuote = async () => {
       try {
-          const prompt = "请生成一句简短（30字以内）的中文语录。风格随机。";
+          const prompt = "请生成一句简短（30字以内）的中文语录，带上颜文字或Emoji。重要：请直接返回语录文本，不要包含任何寒暄、前缀或后缀，不要使用 '|||' 分隔符。";
           const result = await callAI(prompt);
-          const cleanQuote = result.replace(/```.*?```/g, '').trim(); 
+          let cleanQuote = result.replace(/```.*?```/g, '').trim(); 
+          
+          if (cleanQuote.includes('|||')) {
+              const parts = cleanQuote.split('|||').map(p => p.trim());
+              const quotedPart = parts.find(p => /^["'“].*["'”]$/.test(p));
+              if (quotedPart) {
+                  cleanQuote = quotedPart;
+              } else {
+                  // Fallback: Pick the part that doesn't look like a conversational filler
+                  const contentParts = parts.filter(p => !/^(好的|没问题|当然|为您|希望|这里|这是)/.test(p));
+                  cleanQuote = contentParts.length > 0 ? contentParts[0] : parts[0];
+              }
+          }
+
+          // Clean up outer quotes
+          cleanQuote = cleanQuote.replace(/^["'“](.*)["'”]$/, '$1');
+
           setQuoteStr(cleanQuote);
           localStorage.setItem('lifeos_quote', cleanQuote);
       } catch (e) {
