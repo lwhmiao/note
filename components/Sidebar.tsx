@@ -15,7 +15,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onOpenSettings }) => {
   const baseClass = `sidebar-container fixed md:static inset-y-0 left-0 z-40 w-72 bg-notion-sidebar border-r border-notion-border transform transition-transform duration-300 cubic-bezier(0.2, 0, 0, 1) ${
     isOpen ? 'translate-x-0' : '-translate-x-full'
-  } md:translate-x-0 flex flex-col backdrop-blur-xl bg-opacity-90`;
+  } md:translate-x-0 flex flex-col backdrop-blur-xl bg-opacity-90 overflow-x-hidden`;
 
   const MenuItem = ({ view, icon: Icon, label }: { view: ViewMode; icon: any; label: string }) => (
     <button

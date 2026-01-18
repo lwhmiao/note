@@ -171,10 +171,12 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
       }
 
       // Opacity Logic
-      let opacity = 'opacity-100';
+      let opacity = 'opacity-70';
       if (isFuture) {
-          opacity = 'opacity-45';
-      } 
+          opacity = 'opacity-35';
+      } else if (diffDays >= cycleLen && !isOverdue) {
+          opacity = 'opacity-35';
+      }
       
       // Pass isOverdue to style selector
       const config = getPhaseStyleForDay(effectiveCycleDay, periodLen, cycleLen, state.mode, opacity, isOverdue);
@@ -319,7 +321,7 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
       
         {/* --- Top Dashboard Card --- */}
-        <div className="bg-white/80 dark:bg-notion-sidebar rounded-3xl border border-notion-border shadow-soft p-5 md:p-6 relative overflow-hidden transition-colors">
+        <div className="bg-white/80 dark:bg-notion-sidebar rounded-3xl border border-notion-border shadow-soft p-5 md:p-6 relative overflow-visible transition-colors">
               {/* Decoration */}
               <div className="absolute -right-12 -top-12 opacity-5 pointer-events-none overflow-hidden">
                  {state.mode === 'pregnancy' ? <Baby size={200}/> : <Activity size={200}/>}
