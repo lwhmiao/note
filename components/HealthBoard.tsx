@@ -174,10 +174,7 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
       let opacity = 'opacity-100';
       if (isFuture) {
           opacity = 'opacity-45';
-      } else if (diffDays >= cycleLen && !isOverdue && !isToday) {
-          // Only dim predictions if NOT today
-          opacity = 'opacity-45';
-      }
+      } 
       
       // Pass isOverdue to style selector
       const config = getPhaseStyleForDay(effectiveCycleDay, periodLen, cycleLen, state.mode, opacity, isOverdue);
