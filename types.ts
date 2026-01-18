@@ -1,5 +1,4 @@
 
-
 export interface Task {
   id: string;
   title: string;
@@ -40,11 +39,67 @@ export interface BacklogTask {
   createdAt: string;
 }
 
+// --- Health / Body & Mind Station Types ---
+
+export type HealthMode = 'self_care' | 'ttc' | 'pregnancy';
+
+export interface HealthLog {
+  date: string; // YYYY-MM-DD
+  isPeriodStart?: boolean;
+  duration?: number; // Duration in days (e.g. 5)
+  isPeriodEnd?: boolean;
+  flow?: 'light' | 'medium' | 'heavy';
+  flowLevel?: number; // 1-5 scale
+  mood?: string; // Emoji
+  energy?: number; // 1-10
+  symptoms?: string[]; 
+  weight?: number;
+  sexualActivity?: {
+    times: number;
+    protection: string; // '无措施', '安全套', '避孕药', etc.
+  };
+  note?: string;
+}
+
+export interface HealthAnalysis {
+  cycleLength: number; // Average cycle days
+  periodLength: number; // Average period days
+  lastPeriodDate: string; // YYYY-MM-DD
+  nextPeriodDate: string; // Predicted YYYY-MM-DD
+  
+  // Dynamic status calculated by AI
+  currentPhase: string; // e.g. "高能期", "排卵期", "孕中期"
+  dayInPhase: number; // e.g. 5 (5th day of the current phase)
+  dayInCycle: number; // e.g. 14 (14th day of total cycle)
+  
+  // Mode specific
+  conceptionChance?: string; // "70%"
+  pregnancyWeek?: number;
+  pregnancyDay?: number;
+  babySize?: string; // "Lemon"
+  
+  advice: string; // Short advice string
+}
+
+export interface HealthState {
+  mode: HealthMode;
+  logs: HealthLog[];
+  analysis: HealthAnalysis;
+  // User input for baseline if no logs exist yet
+  baseline?: {
+    lastPeriodDate: string;
+    cycleLength: number;
+    periodLength: number;
+    dueDate?: string; // For pregnancy
+  };
+}
+
 export interface AppState {
   tasks: Task[];
   notes: Note[];
   summaries: DailySummary[];
-  backlogTasks: BacklogTask[]; // New: Backlog pool
+  backlogTasks: BacklogTask[];
+  health: HealthState; // New Module
 }
 
 export interface ChatMessage {
@@ -61,7 +116,8 @@ export enum ViewMode {
   DASHBOARD = 'DASHBOARD',
   CALENDAR = 'CALENDAR',
   NOTES = 'NOTES',
-  PLAN_BOARD = 'PLAN_BOARD', // New View
+  PLAN_BOARD = 'PLAN_BOARD',
+  HEALTH = 'HEALTH', // New View
   DAILY_REVIEW = 'DAILY_REVIEW',
   SETTINGS = 'SETTINGS'
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
@@ -9,7 +8,8 @@ import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
 import { DailyReview } from './components/DailyReview';
 import { PlanBoard } from './components/PlanBoard';
-import { AppState, ViewMode, Task, Note, ChatMessage, AppSettings, DEFAULT_SETTINGS, ThemeId, BacklogTask, Quadrant, TaskType } from './types';
+import { HealthBoard } from './components/HealthBoard';
+import { AppState, ViewMode, Task, Note, ChatMessage, AppSettings, DEFAULT_SETTINGS, ThemeId, BacklogTask, Quadrant, TaskType, HealthLog, HealthMode } from './types';
 import { generateResponse } from './services/llm';
 import { Menu } from 'lucide-react';
 
@@ -17,7 +17,21 @@ const initialState: AppState = {
   tasks: [],
   notes: [],
   summaries: [],
-  backlogTasks: []
+  backlogTasks: [],
+  health: {
+      mode: 'self_care',
+      logs: [],
+      analysis: {
+          cycleLength: 28,
+          periodLength: 5,
+          lastPeriodDate: '',
+          nextPeriodDate: '',
+          currentPhase: '需分析',
+          dayInPhase: 0,
+          dayInCycle: 0,
+          advice: ''
+      }
+  }
 };
 
 const DEFAULT_QUOTES = [
@@ -49,7 +63,7 @@ const THEMES: Record<ThemeId, Record<string, string>> = {
         '--color-sidebar': '#F5F2F0',
         '--color-border': '#D6CFC9',
         '--color-text': '#0F0F0F',      
-        '--color-dim': '#4A3E3A',
+        '--color-dim': '#4A3E3A',       
         '--color-hover': '#E0D8D4',
         '--color-accent': '#D6C6B8',
         '--color-accent-border': '#B8A495',
@@ -86,7 +100,7 @@ const THEMES: Record<ThemeId, Record<string, string>> = {
         '--color-hover': '#333333',
         '--color-accent': '#2C2C2C', 
         '--color-accent-border': '#444444',
-        '--color-accent-text': '#E0E0E0', // Gray-ish white, easier on eyes than pure white
+        '--color-accent-text': '#E0E0E0',
     }
 };
 
@@ -94,7 +108,9 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>(() => {
     const saved = localStorage.getItem('lifeos_state');
     const loaded = saved ? JSON.parse(saved) : initialState;
+    // Backfill new properties
     if (!loaded.backlogTasks) loaded.backlogTasks = [];
+    if (!loaded.health) loaded.health = initialState.health;
     return loaded;
   });
 
@@ -124,6 +140,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isAnalyzingHealth, setIsAnalyzingHealth] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [menuPos, setMenuPos] = useState({ x: window.innerWidth - 60, y: 90 });
@@ -134,7 +151,6 @@ export default function App() {
     const theme = THEMES[settings.themeId] || THEMES.sakura;
     const root = document.documentElement;
     
-    // Toggle dark mode class on HTML element for Tailwind dark: prefix support
     if (settings.themeId === 'dark') {
         document.documentElement.classList.add('dark');
     } else {
@@ -220,7 +236,6 @@ export default function App() {
 
   // --- Task Logic ---
   const addTask = (title: string, date: string, tag?: string, completed: boolean = false): Task | null => {
-    // Check for duplicates
     if (appState.tasks.some(t => t.date === date && t.title.trim() === title.trim())) {
         return null;
     }
@@ -294,7 +309,6 @@ export default function App() {
 
   const scheduleBacklogTask = (task: BacklogTask, startDateStr: string, endDateStr?: string) => {
       if (task.type === 'once') {
-          // Schedule once
           const result = addTask(task.title, startDateStr, '计划', false);
           if (result) {
             deleteBacklogTask(task.id);
@@ -302,15 +316,12 @@ export default function App() {
             alert(`该日已存在 "${task.title}"，请勿重复添加！`);
           }
       } else if (task.type === 'longterm' && endDateStr) {
-          // Schedule range
           const start = new Date(startDateStr);
           const end = new Date(endDateStr);
           const newTasks: Task[] = [];
           
           for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
-              // Local ISO YYYY-MM-DD
               const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-              // Pre-check for duplicate in current state to prevent duplicates in DB
               if (!appState.tasks.some(t => t.date === dateStr && t.title === task.title)) {
                 newTasks.push({
                     id: uuidv4(),
@@ -328,9 +339,125 @@ export default function App() {
           } else {
               alert("所选范围内所有日程均已存在。");
           }
-          // Do NOT delete backlog task
       }
   };
+  
+  // --- Health Logic ---
+  const updateHealthLog = (log: HealthLog) => {
+      setAppState(prev => {
+          // Find existing log to merge with if needed (e.g. AI adding symptoms to existing day)
+          const existingIndex = prev.health.logs.findIndex(l => l.date === log.date);
+          const existingLog = existingIndex >= 0 ? prev.health.logs[existingIndex] : undefined;
+          
+          const newLog = { ...existingLog, ...log };
+          // Ensure symptoms are merged, not overwritten if array
+          if (log.symptoms && existingLog?.symptoms) {
+              newLog.symptoms = Array.from(new Set([...existingLog.symptoms, ...log.symptoms]));
+          }
+
+          const filteredLogs = prev.health.logs.filter(l => l.date !== log.date);
+          return {
+              ...prev,
+              health: {
+                  ...prev.health,
+                  logs: [...filteredLogs, newLog]
+              }
+          };
+      });
+  };
+
+  const updateHealthMode = (mode: HealthMode) => {
+      setAppState(prev => ({
+          ...prev,
+          health: { ...prev.health, mode }
+      }));
+  };
+
+  const handleHealthAnalysis = async () => {
+      const activePreset = getActivePreset();
+      if (!activePreset || !activePreset.apiKey) { setIsSettingsOpen(true); return; }
+      
+      setIsAnalyzingHealth(true);
+      try {
+          // Sort logs to get context
+          const sortedLogs = [...appState.health.logs].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          
+          // Use ALL available history for smarter analysis (up to 500 records) to handle "previous months" requirement
+          const contextLogs = sortedLogs.slice(0, 500); 
+          
+          const context = JSON.stringify({
+              mode: appState.health.mode,
+              today: new Date().toLocaleDateString('en-CA'),
+              logs: contextLogs
+          });
+
+          const prompt = `
+          Analyze user's health logs to determine cycle status.
+          
+          Current Mode: ${appState.health.mode}
+          Today: ${new Date().toLocaleDateString('en-CA')}
+          
+          PHASE DEFINITIONS:
+          1. "月经期" (Menstrual): Period days.
+          2. "复苏期" (Follicular): Days after period before ovulation window.
+          3. "高能期" (Ovulation): Ovulation window (approx 5 days).
+          4. "守护期" (Luteal): Days after ovulation before next period.
+          
+          (ttc: Calculate conception chance as a Percentage String e.g. "75%")
+          (pregnancy: Calculate baby size metaphor e.g. "像一颗蓝莓" based on weeks from last period)
+
+          Context: ${context}
+
+          Requirements:
+          1. Calculate average cycle length using ALL available history provided. (default 28 if unknown).
+          2. Predict next period start.
+             **CRITICAL OVERDUE RULE**: 
+             If the calculated next period date is BEFORE Today (${new Date().toLocaleDateString('en-CA')}) and user hasn't logged a new period, IT IS DELAYED.
+             IN THIS CASE, set "nextPeriodDate" to Today (or Tomorrow). 
+             Do NOT return a past date for "nextPeriodDate".
+             The "currentPhase" must reflect this delay (likely "月经期" prediction or "守护期" late).
+          3. Determine "currentPhase" based on TODAY.
+          4. Provide short, warm advice tailored to the *current phase*.
+
+          Return JSON ONLY:
+          {
+            "cycleLength": number,
+            "periodLength": number,
+            "lastPeriodDate": "YYYY-MM-DD",
+            "nextPeriodDate": "YYYY-MM-DD",
+            "currentPhase": "string", 
+            "dayInPhase": number,
+            "dayInCycle": number,
+            "conceptionChance": "string" (percentage),
+            "pregnancyWeek": number (optional),
+            "pregnancyDay": number (optional),
+            "babySize": "string" (optional),
+            "advice": "string"
+          }
+          `;
+
+          const rawResult = await callAI(prompt);
+          const jsonMatch = rawResult.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+              const analysis = JSON.parse(jsonMatch[1]);
+              setAppState(prev => ({
+                  ...prev,
+                  health: {
+                      ...prev.health,
+                      analysis: { ...prev.health.analysis, ...analysis }
+                  }
+              }));
+          } else {
+              alert("分析失败，请稍后重试。");
+          }
+      } catch (e) {
+          console.error(e);
+          alert("AI 连接失败。");
+      } finally {
+          setIsAnalyzingHealth(false);
+      }
+  };
+
 
   const handleResetData = () => {
       setAppState(initialState);
@@ -361,15 +488,11 @@ export default function App() {
               if (quotedPart) {
                   cleanQuote = quotedPart;
               } else {
-                  // Fallback: Pick the part that doesn't look like a conversational filler
                   const contentParts = parts.filter(p => !/^(好的|没问题|当然|为您|希望|这里|这是)/.test(p));
                   cleanQuote = contentParts.length > 0 ? contentParts[0] : parts[0];
               }
           }
-
-          // Clean up outer quotes
           cleanQuote = cleanQuote.replace(/^["'“](.*)["'”]$/, '$1');
-
           setQuoteStr(cleanQuote);
           localStorage.setItem('lifeos_quote', cleanQuote);
       } catch (e) {
@@ -430,7 +553,6 @@ export default function App() {
               case 'update_summary':
                   updateSummary(action.date, action.content);
                   break;
-              // New Backlog Actions
               case 'create_backlog_task':
                   addBacklogTask(action.title, action.quadrant || Quadrant.Q2, action.taskType || 'once');
                   break;
@@ -440,6 +562,9 @@ export default function App() {
               case 'update_backlog_task':
                   updateBacklogTask(action.id, action);
                   break;
+              case 'update_health_log':
+                  updateHealthLog(action);
+                  return `✅ 已更新健康记录 (${action.date})`;
           }
       } catch (e) {
           console.error("Agent execution failed", e);
@@ -548,18 +673,15 @@ export default function App() {
         style={{ 
             backgroundColor: 'var(--color-bg)', 
             color: 'var(--color-text)',
-            // Only show background image if NOT in dark mode
             backgroundImage: (settings.themeId !== 'dark' && settings.globalBackgroundImageUrl) ? `url(${settings.globalBackgroundImageUrl})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
         }}
     >
-      {/* Only show overlay texture/blur if image is present AND not dark mode */}
       {(settings.themeId !== 'dark' && settings.globalBackgroundImageUrl) && (
           <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-0 pointer-events-none" />
       )}
       
-      {/* Mobile Menu Button */}
       <div 
          className="md:hidden fixed z-40 touch-none"
          style={{ left: menuPos.x, top: menuPos.y }}
@@ -574,7 +696,6 @@ export default function App() {
           </button>
       </div>
       
-      {/* Overlay for Mobile Sidebar */}
       {isSidebarOpen && (
           <div 
             className="fixed inset-0 z-30 bg-transparent md:hidden"
@@ -640,6 +761,15 @@ export default function App() {
                     onUpdateBacklogTask={updateBacklogTask}
                     onDeleteBacklogTask={deleteBacklogTask}
                     onScheduleTask={scheduleBacklogTask}
+                  />
+              )}
+              {currentView === ViewMode.HEALTH && (
+                  <HealthBoard
+                    state={appState.health}
+                    onUpdateLog={updateHealthLog}
+                    onUpdateMode={updateHealthMode}
+                    onAnalyze={handleHealthAnalysis}
+                    isAnalyzing={isAnalyzingHealth}
                   />
               )}
             </div>
