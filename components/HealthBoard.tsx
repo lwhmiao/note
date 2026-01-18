@@ -174,7 +174,8 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
       let opacity = 'opacity-100';
       if (isFuture) {
           opacity = 'opacity-45';
-      } else if (diffDays >= cycleLen && !isOverdue) {
+      } else if (diffDays >= cycleLen && !isOverdue && !isToday) {
+          // Only dim predictions if NOT today
           opacity = 'opacity-45';
       }
       
@@ -317,11 +318,11 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
 
 
   return (
-    <div className="h-full bg-texture relative overflow-y-auto">
+    <div className="h-full bg-texture relative overflow-y-auto overflow-x-hidden">
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
       
         {/* --- Top Dashboard Card --- */}
-        <div className="bg-white/80 dark:bg-notion-sidebar rounded-3xl border border-notion-border shadow-soft p-5 md:p-6 relative overflow-visible transition-colors">
+        <div className="bg-white/80 dark:bg-notion-sidebar rounded-3xl border border-notion-border shadow-soft p-5 md:p-6 relative overflow-hidden transition-colors">
               {/* Decoration */}
               <div className="absolute -right-12 -top-12 opacity-5 pointer-events-none overflow-hidden">
                  {state.mode === 'pregnancy' ? <Baby size={200}/> : <Activity size={200}/>}
