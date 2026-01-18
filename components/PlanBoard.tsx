@@ -13,10 +13,8 @@ interface PlanBoardProps {
 }
 
 // Low Saturation Morandi Colors
-// We use custom classes or style injection strategies via Tailwind's arbitrary values for precise control
-// Dark mode strategy: Use white/10 or white/5 transparency to blend with dark background, rather than distinct colors.
 const MORANDI_COLORS = {
-  // Q1: Muted Red/Pink -> Desaturated to almost gray-pink
+  // Q1: Muted Red/Pink
   [Quadrant.Q1]: { 
       bg: 'bg-[#F0EBEB]/40 dark:bg-white/10', 
       border: 'border-[#E0D5D5] dark:border-white/10', 
@@ -60,16 +58,6 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
   onDeleteBacklogTask,
   onScheduleTask 
 }) => {
-  // Persistence for View Mode
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-      const saved = localStorage.getItem('lifeos_plan_view_mode');
-      return (saved as 'grid' | 'list') || 'list';
-  });
-
-  useEffect(() => {
-      localStorage.setItem('lifeos_plan_view_mode', viewMode);
-  }, [viewMode]);
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<BacklogTask | null>(null);
   
@@ -248,7 +236,7 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
           
           onScheduleTask(selectedTask, scheduleStartDate, scheduleEndDate);
           setSelectedTask(null); // Close modal
-          alert(selectedTask.type === 'once' ? "已移动到日历待办" : "已将日程批量添加到日历");
+          // Alerts are handled in App.tsx now
       }
   };
 
@@ -309,23 +297,18 @@ export const PlanBoard: React.FC<PlanBoardProps> = ({
   return (
     <div className="h-full flex flex-col bg-texture relative overflow-hidden">
         
-        {/* Header & Toggle */}
+        {/* Header */}
         <div className="p-6 pb-2 flex justify-between items-end flex-shrink-0">
             <div>
                 <h2 className="text-3xl font-display font-bold text-notion-text">计划池</h2>
                 <p className="text-notion-dim mt-1 text-sm">种下一棵树最好的时间是十年前，其次是现在。</p>
             </div>
-            
-            <div className="md:hidden bg-notion-sidebar rounded-lg p-1 border border-notion-border flex">
-                <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-notion-accent text-notion-accentText' : 'text-notion-dim'}`}><List size={18}/></button>
-                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-notion-accent text-notion-accentText' : 'text-notion-dim'}`}><Grid size={18}/></button>
-            </div>
         </div>
 
         {/* Board Area */}
         <div className="flex-1 p-4 md:p-6 overflow-hidden relative">
-             {/* Desktop is always grid, Mobile depends on toggle */}
-             <div className={`h-full w-full gap-2 ${viewMode === 'grid' || window.innerWidth >= 768 ? 'grid grid-cols-2 grid-rows-2' : 'flex flex-col space-y-4 overflow-y-auto pb-20'}`}>
+             {/* Force Grid View Always */}
+             <div className="h-full w-full gap-2 grid grid-cols-2 grid-rows-2">
                  <QuadrantSection q={Quadrant.Q1} />
                  <QuadrantSection q={Quadrant.Q2} />
                  <QuadrantSection q={Quadrant.Q3} />

@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Plus, X, Trash2, CheckCircle2 } from 'lucide
 interface CalendarViewProps {
   tasks: Task[];
   onToggleTask: (id: string) => void;
-  onAddTask: (title: string, date: string, tag?: string) => void;
+  onAddTask: (title: string, date: string, tag?: string) => Task | null;
   onDeleteTask: (id: string) => void;
   onUpdateTask: (id: string, updates: Partial<Task>) => void;
   currentDate: Date;
@@ -101,7 +101,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       if (editingTask) {
           onUpdateTask(editingTask.id, { title: formTitle, tag: formTag });
       } else {
-          onAddTask(formTitle, selectedDateStr, formTag);
+          const res = onAddTask(formTitle, selectedDateStr, formTag);
+          if (!res) {
+              alert("该日已存在相同任务！");
+              return;
+          }
       }
       setModalOpen(false);
   };

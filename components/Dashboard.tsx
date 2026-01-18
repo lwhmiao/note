@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { AppState } from '../types';
+import { AppState, Task } from '../types';
 import { CheckCircle2, Circle, Sparkles, ArrowRight, Plus, X, RefreshCw } from 'lucide-react';
 
 interface DashboardProps {
   state: AppState;
   onToggleTask: (id: string) => void;
-  onAddTask: (title: string, date: string) => void;
+  onAddTask: (title: string, date: string) => Task | null;
   onGenerateSummary: () => void;
   quoteStr: string;
   onRefreshQuote: () => Promise<void>;
@@ -39,7 +39,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onToggleTask, onAdd
         setIsAddingTask(false);
         return;
     }
-    onAddTask(newTaskTitle, today);
+    const res = onAddTask(newTaskTitle, today);
+    if (!res) {
+        alert("今日已存在该任务！");
+        return;
+    }
     setNewTaskTitle('');
     setIsAddingTask(false);
   };

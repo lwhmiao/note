@@ -219,7 +219,11 @@ export default function App() {
   };
 
   // --- Task Logic ---
-  const addTask = (title: string, date: string, tag?: string, completed: boolean = false) => {
+  const addTask = (title: string, date: string, tag?: string, completed: boolean = false): Task | null => {
+    // Check for duplicates
+    if (appState.tasks.some(t => t.date === date && t.title.trim() === title.trim())) {
+        return null;
+    }
     const newTask: Task = { id: uuidv4(), title, date, completed, tag };
     setAppState(prev => ({ ...prev, tasks: [...prev.tasks, newTask] }));
     return newTask;
@@ -291,8 +295,12 @@ export default function App() {
   const scheduleBacklogTask = (task: BacklogTask, startDateStr: string, endDateStr?: string) => {
       if (task.type === 'once') {
           // Schedule once
-          addTask(task.title, startDateStr, '计划', false);
-          deleteBacklogTask(task.id);
+          const result = addTask(task.title, startDateStr, '计划', false);
+          if (result) {
+            deleteBacklogTask(task.id);
+          } else {
+            alert(`该日已存在 "${task.title}"，请勿重复添加！`);
+          }
       } else if (task.type === 'longterm' && endDateStr) {
           // Schedule range
           const start = new Date(startDateStr);
@@ -302,15 +310,24 @@ export default function App() {
           for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
               // Local ISO YYYY-MM-DD
               const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-              newTasks.push({
-                  id: uuidv4(),
-                  title: task.title,
-                  date: dateStr,
-                  completed: false,
-                  tag: '计划'
-              });
+              // Pre-check for duplicate in current state to prevent duplicates in DB
+              if (!appState.tasks.some(t => t.date === dateStr && t.title === task.title)) {
+                newTasks.push({
+                    id: uuidv4(),
+                    title: task.title,
+                    date: dateStr,
+                    completed: false,
+                    tag: '计划'
+                });
+              }
           }
-          setAppState(prev => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }));
+
+          if (newTasks.length > 0) {
+              setAppState(prev => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }));
+              alert(`已成功添加 ${newTasks.length} 个日程。`);
+          } else {
+              alert("所选范围内所有日程均已存在。");
+          }
           // Do NOT delete backlog task
       }
   };
@@ -389,12 +406,13 @@ export default function App() {
       }
   };
 
-  const executeAgentAction = (action: any) => {
+  const executeAgentAction = (action: any): string | null => {
       console.log("Agent executing:", action);
       try {
           switch (action.type) {
               case 'create_task':
-                  addTask(action.title, action.date, action.tag, action.completed || false);
+                  const t = addTask(action.title, action.date, action.tag, action.completed || false);
+                  if (!t) return `💡 任务 "${action.title}" 在 ${action.date} 已存在，不再重复添加。`;
                   break;
               case 'update_task':
               case 'complete_task':
@@ -426,6 +444,7 @@ export default function App() {
       } catch (e) {
           console.error("Agent execution failed", e);
       }
+      return null;
   };
 
   const handleUserPost = (text: string, image?: string) => {
@@ -479,6 +498,7 @@ export default function App() {
       const rawText = modelContent.parts?.map((p: any) => p.text).join('') || "";
       let displayText = rawText;
       let agentActions: any[] = [];
+      const feedbackMsgs: string[] = [];
       const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
       
       if (jsonMatch) {
@@ -486,7 +506,10 @@ export default function App() {
               const jsonContent = JSON.parse(jsonMatch[1]);
               if (jsonContent.actions && Array.isArray(jsonContent.actions)) {
                   agentActions = jsonContent.actions;
-                  agentActions.forEach(action => executeAgentAction(action));
+                  agentActions.forEach(action => {
+                      const fb = executeAgentAction(action);
+                      if (fb) feedbackMsgs.push(fb);
+                  });
                   displayText = rawText.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
                   if (!displayText) displayText = "已为您更新数据。";
               }
@@ -504,6 +527,11 @@ export default function App() {
               const delay = 800 + Math.random() * 1000;
               await new Promise(resolve => setTimeout(resolve, delay));
           }
+      }
+
+      if (feedbackMsgs.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 600));
+          setMessages(prev => [...prev, { id: uuidv4(), role: 'model', text: feedbackMsgs.join('\n'), timestamp: Date.now() }]);
       }
 
     } catch (e: any) {
