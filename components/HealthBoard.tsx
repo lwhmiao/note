@@ -291,7 +291,9 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
   let displayDayInfo = null;
 
   // Sync Dashboard Logic with Calendar Logic
-  if (state.analysis.currentPhase === '需分析') {
+  if (state.mode === 'pregnancy') {
+      displayPhaseLabel = '孕期';
+  } else if (state.analysis.currentPhase === '需分析') {
       displayPhaseLabel = '等待分析';
   } else if (!isTodayLogged && !todayCalculated.label && !todayCalculated.isPredicted) {
       displayPhaseLabel = state.mode === 'ttc' ? '等待期' : '守护期';
