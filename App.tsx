@@ -530,11 +530,12 @@ export default function App() {
           
           Requirements:
           1. 总结今日任务完成情况。
-          2. 结合 Health Status 简单提一句身体状况（如“今天处于${safeHealthContext.cyclePhase}，注意休息”或“记录了心情：${safeHealthContext.mood}”），保持自然温暖。
+          2. 结合 Health Status 简单提一句身体状况（如“今天处于${safeHealthContext.cyclePhase}，注意休息”或“记录了心情：${safeHealthContext.mood}”），不需要提及周期第几天，保持自然温暖。
           3. **绝对不要**提及任何关于性生活（sexual activity）的隐私话题，即使上下文中存在相关数据。
           4. 可以适当加入emoji或颜文字。
           5. 语气温暖，字数100-150字。
-          6. 可以换行写，但不要出现空行。
+          6. 如果笔记灵感近两天有更新，就提一下。
+          7. 可以换行写，但不要出现空行。
           `;
           
           const rawResult = await callAI(prompt);
