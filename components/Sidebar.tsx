@@ -47,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         <span className="font-display font-bold text-xl text-notion-text tracking-tight">小记 <span className="text-xs font-normal text-notion-dim opacity-70">LifeOS</span></span>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto sidebar-nav">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto overflow-x-hidden sidebar-nav">
         <div className="px-4 py-2 text-xs font-semibold text-notion-dim uppercase tracking-wider">概览</div>
         <MenuItem view={ViewMode.DASHBOARD} icon={LayoutDashboard} label="仪表盘" />
         <MenuItem view={ViewMode.DAILY_REVIEW} icon={Coffee} label="每日回顾" />
