@@ -535,7 +535,7 @@ export default function App() {
           4. 可以适当加入emoji或颜文字。
           5. 语气温暖，字数100-150字。
           6. 如果笔记灵感近两天有更新，就提一下。
-          7. 可以换行写，但不要出现空行。
+          7. 对于不同模块的内容总结可以换行写，但不要出现空行。
           `;
           
           const rawResult = await callAI(prompt);
