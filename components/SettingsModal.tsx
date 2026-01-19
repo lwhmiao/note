@@ -156,20 +156,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   );
 
   const handleExport = () => {
-    // Export Full Snapshot including chat history and settings
+    // Export Full Snapshot including chat history and settings (API Keys included per user request)
     const exportData = {
         version: "2.0",
         timestamp: Date.now(),
-        data: appState,
-        settings: settings, // Include API keys and personas
-        chat: currentMessages || [], // Include chat history
+        data: appState, // Includes tasks, notes, health (HealthState)
+        settings: settings, // Includes presets (API Keys, Base URL, Models)
+        chat: currentMessages || [], // Full Chat History
         quote: currentQuote || ""
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `LifeOS_Backup_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchorNode.setAttribute("download", `LifeOS_FullBackup_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -185,7 +185,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 
                 // Detection: Version 2.0 (Full Snapshot) or Legacy (AppState only)
                 if (parsed.version === "2.0" || (parsed.data && parsed.settings)) {
-                    if(confirm("导入将覆盖当前所有应用数据（包括 API 设置和聊天记录），确定吗？")) {
+                    if(confirm("导入将覆盖当前所有应用数据（包括 API 设置、聊天记录、身心数据），确定吗？")) {
                         if (onImportFullData) onImportFullData(parsed);
                         alert("全量数据导入成功！");
                     }
@@ -455,7 +455,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                  </div>
                  <div>
                    <h3 className="font-bold text-notion-text">备份数据 (全量)</h3>
-                   <p className="text-sm text-notion-dim mt-1">导出任务、笔记、聊天记录、API 配置和个人偏好。</p>
+                   <p className="text-sm text-notion-dim mt-1">导出任务、笔记、聊天记录、身心数据、API 配置和个人偏好。</p>
                  </div>
                  <button type="button" onClick={handleExport} className="px-6 py-2 bg-notion-text text-white dark:text-black rounded-xl font-medium hover:opacity-90 transition-opacity">
                    导出全量快照 (JSON)

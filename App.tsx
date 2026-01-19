@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
@@ -506,7 +507,35 @@ export default function App() {
       if (!activePreset || !activePreset.apiKey) { setIsSettingsOpen(true); return; }
       setIsGeneratingSummary(true);
       try {
-          const prompt = `请为我生成 ${date} 的每日小结。总结任务和笔记，语气温暖。字数100-150字。`;
+          // Prepare Health Context for Summary
+          const todayHealthLog = appState.health.logs.find(l => l.date === date);
+          const currentPhase = appState.health.analysis.currentPhase;
+          
+          // Filter out sensitive data explicitly
+          const safeHealthContext = {
+              cyclePhase: currentPhase,
+              mood: todayHealthLog?.mood,
+              symptoms: todayHealthLog?.symptoms,
+              weight: todayHealthLog?.weight,
+              energy: todayHealthLog?.energy,
+              // Explicitly excluding sexualActivity
+          };
+
+          const prompt = `
+          请为我生成 ${date} 的每日小结。
+          
+          Context:
+          - Tasks & Notes: (See attached context)
+          - Health Status: ${JSON.stringify(safeHealthContext)}
+          
+          Requirements:
+          1. 总结今日任务完成情况。
+          2. 结合 Health Status 简单提一句身体状况（如“今天处于${safeHealthContext.cyclePhase}，注意休息”或“记录了心情：${safeHealthContext.mood}”），保持自然温暖。
+          3. **绝对不要**提及任何关于性生活（sexual activity）的隐私话题，即使上下文中存在相关数据。
+          4. 可以适当使用emoji或颜文字。
+          5. 语气温暖，字数100-150字。
+          `;
+          
           const rawResult = await callAI(prompt);
           let finalContent = rawResult;
           const jsonMatch = rawResult.match(/```json\s*([\s\S]*?)\s*```/);
