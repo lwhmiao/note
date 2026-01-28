@@ -385,7 +385,7 @@ export default function App() {
           
           // Get user preference for duration to force alignment
           const lastPeriodLog = sortedLogs.find(l => l.isPeriodStart);
-          const periodDuration = lastPeriodLog?.duration || 5;
+          const periodDuration = lastPeriodLog?.duration;
 
           // Use ALL available history for smarter analysis (up to 500 records) to handle "previous months" requirement
           const contextLogs = sortedLogs.slice(0, 500); 
