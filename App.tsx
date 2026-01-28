@@ -383,9 +383,48 @@ export default function App() {
           // Sort logs to get context
           const sortedLogs = [...appState.health.logs].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           
-          // Get user preference for duration to force alignment
-          const lastPeriodLog = sortedLogs.find(l => l.isPeriodStart);
-          const periodDuration = lastPeriodLog?.duration;
+          // --- FORCE CALCULATE PHASE LOCALLY TO MATCH CALENDAR ---
+          const lastLog = sortedLogs.find(l => l.isPeriodStart);
+          let calculatedPhase = '需分析';
+          let calculatedDayInPhase = 1;
+          
+          if (lastLog) {
+              const today = new Date();
+              today.setHours(0,0,0,0);
+              const lastDate = new Date(lastLog.date);
+              lastDate.setHours(0,0,0,0);
+              
+              const diffTime = today.getTime() - lastDate.getTime();
+              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+              const currentCycleDay = diffDays + 1; // 1-based
+
+              const pLen = lastLog.duration || 5;
+              const cLen = appState.health.analysis.cycleLength || 28;
+              const mode = appState.health.mode;
+              
+              // Standard Cycle Phase Boundaries (Matching HealthBoard.tsx)
+              const ovulationDay = cLen - 14; 
+              const fertileStart = ovulationDay - 5; 
+              const fertileEnd = ovulationDay + 1;
+              
+              if (currentCycleDay <= pLen) {
+                  calculatedPhase = '月经期';
+                  calculatedDayInPhase = currentCycleDay;
+              } else if (currentCycleDay >= cLen) {
+                  calculatedPhase = mode === 'ttc' ? '等待期' : '守护期';
+                  calculatedDayInPhase = currentCycleDay - fertileEnd; // Approx
+              } else if (currentCycleDay < fertileStart) {
+                  calculatedPhase = mode === 'ttc' ? '平稳期' : '复苏期';
+                  calculatedDayInPhase = currentCycleDay - pLen;
+              } else if (currentCycleDay <= fertileEnd) {
+                  calculatedPhase = mode === 'ttc' ? '易孕期' : '高能期';
+                  calculatedDayInPhase = currentCycleDay - fertileStart + 1;
+              } else {
+                  calculatedPhase = mode === 'ttc' ? '等待期' : '守护期';
+                  calculatedDayInPhase = currentCycleDay - fertileEnd;
+              }
+          }
+          // -------------------------------------------------------
 
           // Use ALL available history for smarter analysis (up to 500 records) to handle "previous months" requirement
           const contextLogs = sortedLogs.slice(0, 500); 
@@ -402,11 +441,13 @@ export default function App() {
           Current Mode: ${appState.health.mode}
           Today: ${new Date().toLocaleDateString('en-CA')}
           
-          CRITICAL PHASE DEFINITIONS (Must match UI):
-          1. "月经期" (Menstrual): From Start Date for exactly ${periodDuration} days.
-          2. "复苏期" (Follicular): From Day ${periodDuration + 1} until Ovulation window.
-          3. "高能期" (Ovulation): Ovulation window (approx 5 days).
-          4. "守护期" (Luteal): Days after ovulation before next period.
+          *** SYSTEM OVERRIDE - STRICT INSTRUCTION ***
+          The user's strictly calculated biological phase is: "${calculatedPhase}".
+          
+          You MUST set the "currentPhase" field in the JSON response to exactly "${calculatedPhase}".
+          Do NOT attempt to re-calculate or guess the phase based on your own logic. Trust the system provided phase.
+          
+          Your task is to generate warm, helpful ADVICE specifically for the "${calculatedPhase}".
           
           (ttc: Calculate conception chance as a Percentage String e.g. "75%")
           (pregnancy: Calculate baby size metaphor e.g. "像一颗蓝莓" based on weeks from last period)
@@ -415,14 +456,9 @@ export default function App() {
 
           Requirements:
           1. Calculate average cycle length using ALL available history provided. (default 28 if unknown).
-          2. Predict next period start.
-             **CRITICAL OVERDUE RULE**: 
-             If the calculated next period date is BEFORE Today (${new Date().toLocaleDateString('en-CA')}) and user hasn't logged a new period, IT IS DELAYED.
-             IN THIS CASE, set "nextPeriodDate" to Today (or Tomorrow). 
-             Do NOT return a past date for "nextPeriodDate".
-             The "currentPhase" must reflect this delay (likely "月经期" prediction or "守护期" late).
-          3. Determine "currentPhase" based on TODAY and the Rules above.
-          4. Provide short, warm advice tailored to the *current phase*.
+          2. Predict next period start based on history.
+          3. Use the FORCED "currentPhase": "${calculatedPhase}".
+          4. Provide short, warm advice tailored to this phase.
 
           Return JSON ONLY:
           {
