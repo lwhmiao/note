@@ -287,7 +287,8 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
   const todayCalculated = calculatePhase(todayStr);
   const isTodayLogged = logMap[todayStr]?.isPeriodStart || logMap[todayStr]?.flow;
   
-  // FIX: Prioritize Calendar Calculation over AI Stale Data to ensure consistency
+  // FIX: Prioritize Calendar Calculation over AI Stale Data
+  // This ensures the header matches the calendar grid
   let displayPhaseLabel = todayCalculated.label;
   
   if (state.mode === 'pregnancy') {
@@ -308,6 +309,14 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
 
   // MODIFIED: Removed Day X info as requested
   const displayDayInfo = null;
+  
+  // Detect Stale AI Advice
+  // If the calculated phase (displayPhaseLabel) differs from the AI's stored phase, the advice is likely for the wrong phase.
+  const isAdviceStale = state.analysis.currentPhase && 
+                        displayPhaseLabel && 
+                        state.analysis.currentPhase !== displayPhaseLabel && 
+                        state.mode !== 'pregnancy' && 
+                        displayPhaseLabel !== '等待分析';
 
   // --- Calendar Grid ---
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -407,7 +416,10 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
                       <div>
                           <h4 className="text-xs font-bold text-notion-dim uppercase mb-2">AI 建议 ({displayPhaseLabel})</h4>
                           <p className="text-sm text-notion-text leading-relaxed font-medium">
-                              {state.analysis.advice || "记录经期并点击分析，获取针对当前阶段的专属建议。"}
+                              {isAdviceStale 
+                                  ? "检测到周期状态更新，请点击右上角「AI 分析」获取最新建议。" 
+                                  : (state.analysis.advice || "记录经期并点击分析，获取针对当前阶段的专属建议。")
+                              }
                           </p>
                       </div>
                   </div>
@@ -468,275 +480,4 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-7 gap-2 mb-4">
-                {['日', '一', '二', '三', '四', '五', '六'].map(d => (
-                    <div key={d} className="text-center text-[10px] font-bold text-notion-dim uppercase py-1">{d}</div>
-                ))}
-                
-                {days.map((date, i) => {
-                    if (!date) return <div key={`empty-${i}`} className="min-h-[60px]" />; // Shorter spacer
-                    
-                    const dStr = toLocalDateStr(date);
-                    const isToday = dStr === todayStr;
-                    
-                    // FIX 2: Future Check for Interaction
-                    const todayDate = new Date();
-                    todayDate.setHours(0,0,0,0);
-                    const cellDate = new Date(date);
-                    cellDate.setHours(0,0,0,0);
-                    const isFuture = cellDate > todayDate;
-
-                    const log = logMap[dStr];
-                    const { style: phaseStyle, opacityClass } = getPhaseConfig(dStr);
-                    const hasLog = log && (log.mood || log.symptoms?.length || log.weight || log.sexualActivity);
-
-                    return (
-                        <div 
-                          key={dStr}
-                          onClick={() => !isFuture && openLogModal(dStr)}
-                          className={`min-h-[60px] rounded-xl p-1.5 relative transition-all flex flex-col items-center justify-start gap-0.5 border-transparent ${
-                              isFuture ? 'cursor-default opacity-80' : 'cursor-pointer hover:scale-[1.02] hover:border-notion-border hover:shadow-sm'
-                          } ${phaseStyle || PHASE_STYLES['default']} ${opacityClass}`}
-                        >
-                            <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-text text-notion-bg shadow-md' : ''}`}>
-                                {date.getDate()}
-                            </span>
-                            
-                            <div className="flex gap-0.5 mt-0.5">
-                                {hasLog && <div className="w-1 h-1 rounded-full bg-current opacity-60"/>}
-                                {log?.sexualActivity && <div className="w-1 h-1 rounded-full bg-red-400 opacity-80"/>}
-                            </div>
-                            
-                            {log?.mood && <span className="text-[8px] opacity-80 leading-none mt-0.5">{log.mood.split(' ')[0]}</span>}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Legend / Footer */}
-            <div className="pt-4 border-t border-notion-border">
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                    {state.mode === 'self_care' ? (
-                        <>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['menstrual'].split(' ')[0]}`}/> 月经期</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['follicular'].split(' ')[0]}`}/> 复苏期</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['ovulation'].split(' ')[0]}`}/> 高能期</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['luteal'].split(' ')[0]}`}/> 守护期</div>
-                        </>
-                    ) : state.mode === 'ttc' ? (
-                        <>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['menstrual'].split(' ')[0]}`}/> 月经期</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['ttc_stable'].split(' ')[0]}`}/> 平稳期</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['ttc_high'].split(' ')[0]}`}/> 易孕期</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['ttc_peak'].split(' ')[0]}`}/> 排卵日</div>
-                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-notion-dim"><div className={`w-2.5 h-2.5 rounded-full ${PHASE_STYLES['ttc_waiting'].split(' ')[0]}`}/> 等待期</div>
-                        </>
-                    ) : null}
-                </div>
-            </div>
-
-        </div>
-
-        {/* Log Modal */}
-        {selectedDateStr && editingLog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-notion-dark/30 backdrop-blur-sm p-4">
-              <div className="bg-white/95 dark:bg-notion-bg w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-white/20 animate-in zoom-in-95 duration-200 transition-colors">
-                  <div className="flex justify-between items-center mb-6">
-                      <div className="flex items-center gap-2">
-                           <h3 className="text-lg font-bold text-notion-text">身体日记</h3>
-                           <span className="text-xs font-mono text-notion-dim bg-notion-sidebar px-2 py-1 rounded-lg">{selectedDateStr}</span>
-                      </div>
-                      <button onClick={() => { setSelectedDateStr(null); setEditingLog(null); }} className="text-notion-dim hover:text-notion-text"><X size={20}/></button>
-                  </div>
-                  
-                  <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-                      
-                      {/* Period Toggle with Duration Slider */}
-                      <div className="flex flex-col gap-4 p-4 bg-notion-sidebar rounded-xl border border-notion-border">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-bold text-notion-text flex items-center gap-2"><Droplets size={16}/> 经期状态</span>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => setEditingLog(prev => ({
-                                        ...prev, 
-                                        isPeriodStart: !prev?.isPeriodStart,
-                                        duration: !prev?.isPeriodStart ? defaultDuration : prev?.duration
-                                    }))}
-                                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${editingLog.isPeriodStart ? 'bg-notion-accentText text-white border-notion-accentText' : 'bg-notion-bg border-notion-border text-notion-dim'}`}
-                                >
-                                    经期开始
-                                </button>
-                            </div>
-                          </div>
-
-                          {/* Duration Slider - Only show if Period Start is active */}
-                          {editingLog.isPeriodStart && (
-                              <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2">
-                                  <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-1 justify-between">
-                                      <span className="flex items-center gap-1"><Clock size={12}/> 持续天数</span>
-                                      <span className="text-notion-accentText">{editingLog.duration || 5} 天</span>
-                                  </label>
-                                  <input 
-                                    type="range" 
-                                    min="2" 
-                                    max="14" 
-                                    value={editingLog.duration || 5}
-                                    onChange={(e) => setEditingLog(prev => ({...prev, duration: parseInt(e.target.value)}))}
-                                    className="w-full accent-notion-accentText"
-                                  />
-                                  <p className="text-[10px] text-notion-dim opacity-70">将自动标记未来几天为经期</p>
-                              </div>
-                          )}
-                          
-                          {/* Flow Selector */}
-                          <div className="pt-2 border-t border-notion-border/50">
-                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-bold text-notion-dim uppercase">流量</span>
-                                <span className="text-xs text-notion-dim">{editingLog.flowLevel ? `${editingLog.flowLevel}级` : '未记录'}</span>
-                             </div>
-                             <div className="flex justify-between px-2">
-                                {[1, 2, 3, 4, 5].map(level => (
-                                    <button
-                                        key={level}
-                                        onClick={() => setEditingLog(prev => ({...prev, flowLevel: prev?.flowLevel === level ? 0 : level}))}
-                                        className={`p-2 rounded-full transition-all ${
-                                            (editingLog.flowLevel || 0) >= level 
-                                            ? 'text-notion-accentText scale-110' 
-                                            : 'text-notion-border hover:text-notion-dim'
-                                        }`}
-                                    >
-                                        <Droplets size={16 + (level * 2)} className={ (editingLog.flowLevel || 0) >= level ? "fill-current" : "" } />
-                                    </button>
-                                ))}
-                             </div>
-                          </div>
-                      </div>
-
-                      {/* Sexual Activity Tracking (New) */}
-                      <div className="p-4 bg-white/50 dark:bg-notion-bg/50 rounded-xl border border-notion-border space-y-3">
-                         <div className="flex justify-between items-center">
-                             <span className="text-sm font-bold text-notion-text flex items-center gap-2"><HeartHandshake size={16}/> 性生活</span>
-                             <button
-                               onClick={() => setEditingLog(prev => ({ 
-                                   ...prev, 
-                                   sexualActivity: prev?.sexualActivity 
-                                     ? undefined 
-                                     : { times: 1, protection: '无措施' } 
-                               }))}
-                               className={`w-10 h-6 rounded-full p-1 transition-colors flex items-center ${editingLog.sexualActivity ? 'bg-notion-accentText justify-end' : 'bg-notion-border justify-start'}`}
-                             >
-                                 <div className="w-4 h-4 rounded-full bg-white shadow-sm" />
-                             </button>
-                         </div>
-                         
-                         {editingLog.sexualActivity && (
-                             <div className="pt-2 animate-in fade-in slide-in-from-top-1 space-y-3">
-                                 <div className="flex justify-between items-center">
-                                     <span className="text-xs text-notion-dim">次数</span>
-                                     <div className="flex items-center gap-3">
-                                         <button 
-                                            onClick={() => setEditingLog(prev => ({...prev, sexualActivity: {...prev!.sexualActivity!, times: Math.max(1, prev!.sexualActivity!.times - 1)}}))}
-                                            className="w-6 h-6 rounded-full bg-notion-sidebar border border-notion-border text-notion-dim flex items-center justify-center"
-                                         >-</button>
-                                         <span className="text-sm font-bold w-4 text-center">{editingLog.sexualActivity.times}</span>
-                                         <button 
-                                            onClick={() => setEditingLog(prev => ({...prev, sexualActivity: {...prev!.sexualActivity!, times: prev!.sexualActivity!.times + 1}}))}
-                                            className="w-6 h-6 rounded-full bg-notion-sidebar border border-notion-border text-notion-dim flex items-center justify-center"
-                                         >+</button>
-                                     </div>
-                                 </div>
-                                 
-                                 <div className="space-y-1">
-                                     <span className="text-xs text-notion-dim flex items-center gap-1"><Shield size={10}/> 保护措施</span>
-                                     <select 
-                                        value={editingLog.sexualActivity.protection}
-                                        onChange={(e) => setEditingLog(prev => ({...prev, sexualActivity: {...prev!.sexualActivity!, protection: e.target.value}}))}
-                                        className="w-full p-2 rounded-lg bg-notion-sidebar border border-notion-border text-xs outline-none"
-                                     >
-                                         {PROTECTION_LIST.map(p => <option key={p} value={p}>{p}</option>)}
-                                     </select>
-                                 </div>
-                             </div>
-                         )}
-                      </div>
-
-                      {/* Energy Slider */}
-                      <div className="space-y-2">
-                          <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-1"><Zap size={14}/> 能量值 ({editingLog.energy || 5})</label>
-                          <input 
-                            type="range" 
-                            min="1" 
-                            max="10" 
-                            value={editingLog.energy || 5}
-                            onChange={(e) => setEditingLog(prev => ({...prev, energy: parseInt(e.target.value)}))}
-                            className="w-full accent-notion-accentText"
-                          />
-                      </div>
-
-                      {/* Mood */}
-                      <div className="space-y-2">
-                          <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-1"><Smile size={14}/> 心情</label>
-                          <div className="flex flex-wrap gap-2">
-                              {MOOD_LIST.map(m => (
-                                  <button
-                                    key={m}
-                                    onClick={() => setEditingLog(prev => ({...prev, mood: prev?.mood === m ? undefined : m}))}
-                                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${editingLog.mood === m ? 'bg-notion-accent border-notion-accentBorder text-notion-accentText font-bold' : 'bg-notion-bg border-notion-border text-notion-text'}`}
-                                  >
-                                      {m}
-                                  </button>
-                              ))}
-                          </div>
-                      </div>
-
-                      {/* Symptoms */}
-                      <div className="space-y-2">
-                          <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-1"><Heart size={14}/> 身体感受</label>
-                          <div className="flex flex-wrap gap-2">
-                              {SYMPTOMS_LIST.map(s => {
-                                  const isActive = editingLog.symptoms?.includes(s);
-                                  return (
-                                    <button
-                                        key={s}
-                                        onClick={() => {
-                                            const current = editingLog.symptoms || [];
-                                            const next = isActive ? current.filter(x => x !== s) : [...current, s];
-                                            setEditingLog(prev => ({...prev, symptoms: next}));
-                                        }}
-                                        className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${isActive ? 'bg-notion-sidebar border-notion-text text-notion-text font-bold' : 'bg-notion-bg border-notion-border text-notion-dim'}`}
-                                    >
-                                        {s}
-                                    </button>
-                                  );
-                              })}
-                          </div>
-                      </div>
-
-                      {/* Weight */}
-                      <div className="space-y-2">
-                           <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-1"><Thermometer size={14}/> 体重 (kg)</label>
-                           <input 
-                             type="number" 
-                             step="0.1"
-                             value={editingLog.weight || ''}
-                             onChange={(e) => setEditingLog(prev => ({...prev, weight: parseFloat(e.target.value)}))}
-                             className="w-full p-3 bg-notion-sidebar rounded-xl border-none outline-none text-notion-text font-mono"
-                             placeholder="0.0"
-                           />
-                      </div>
-                  </div>
-
-                  <button 
-                    onClick={saveLog}
-                    className="w-full mt-6 py-3 bg-notion-accentText text-white rounded-xl font-bold shadow-lg hover:opacity-90 transition-opacity"
-                  >
-                      保存记录
-                  </button>
-              </div>
-          </div>
-      )}
-
-      </div>
-    </div>
-  );
-};
+            <div className="grid grid-cols-7 gap-2 mb-

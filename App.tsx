@@ -383,6 +383,10 @@ export default function App() {
           // Sort logs to get context
           const sortedLogs = [...appState.health.logs].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           
+          // Get user preference for duration to force alignment
+          const lastPeriodLog = sortedLogs.find(l => l.isPeriodStart);
+          const periodDuration = lastPeriodLog?.duration || 5;
+
           // Use ALL available history for smarter analysis (up to 500 records) to handle "previous months" requirement
           const contextLogs = sortedLogs.slice(0, 500); 
           
@@ -398,9 +402,9 @@ export default function App() {
           Current Mode: ${appState.health.mode}
           Today: ${new Date().toLocaleDateString('en-CA')}
           
-          PHASE DEFINITIONS:
-          1. "月经期" (Menstrual): Period days.
-          2. "复苏期" (Follicular): Days after period before ovulation window.
+          CRITICAL PHASE DEFINITIONS (Must match UI):
+          1. "月经期" (Menstrual): From Start Date for exactly ${periodDuration} days.
+          2. "复苏期" (Follicular): From Day ${periodDuration + 1} until Ovulation window.
           3. "高能期" (Ovulation): Ovulation window (approx 5 days).
           4. "守护期" (Luteal): Days after ovulation before next period.
           
@@ -417,7 +421,7 @@ export default function App() {
              IN THIS CASE, set "nextPeriodDate" to Today (or Tomorrow). 
              Do NOT return a past date for "nextPeriodDate".
              The "currentPhase" must reflect this delay (likely "月经期" prediction or "守护期" late).
-          3. Determine "currentPhase" based on TODAY.
+          3. Determine "currentPhase" based on TODAY and the Rules above.
           4. Provide short, warm advice tailored to the *current phase*.
 
           Return JSON ONLY:
