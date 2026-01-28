@@ -287,22 +287,21 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
   const todayCalculated = calculatePhase(todayStr);
   const isTodayLogged = logMap[todayStr]?.isPeriodStart || logMap[todayStr]?.flow;
   
-  let displayPhaseLabel = todayCalculated.label || "等待分析";
-  let displayDayInfo = null;
-
-  // Sync Dashboard Logic with Calendar Logic
+  // MODIFIED: Prioritize AI Analysis Phase if available
+  let displayPhaseLabel = state.analysis.currentPhase;
+  
   if (state.mode === 'pregnancy') {
       displayPhaseLabel = '孕期';
-  } else if (state.analysis.currentPhase === '需分析') {
-      displayPhaseLabel = '等待分析';
-  } else if (!isTodayLogged && !todayCalculated.label && !todayCalculated.isPredicted) {
-      displayPhaseLabel = state.mode === 'ttc' ? '等待期' : '守护期';
-  } 
-
-  // FIX 1: Use Day In Phase (e.g. "Ovulation Day 3") instead of Day In Cycle (e.g. "Day 14")
-  if (todayCalculated.dayInPhase && state.analysis.currentPhase !== '需分析') {
-      displayDayInfo = `Day ${todayCalculated.dayInPhase}`;
+  } else if (!displayPhaseLabel || displayPhaseLabel === '需分析') {
+      displayPhaseLabel = todayCalculated.label || "等待分析";
+      // Fallback for gaps
+      if (displayPhaseLabel === '等待分析' && !isTodayLogged && !todayCalculated.label && !todayCalculated.isPredicted) {
+          displayPhaseLabel = state.mode === 'ttc' ? '等待期' : '守护期';
+      }
   }
+
+  // MODIFIED: Removed Day X info as requested
+  const displayDayInfo = null;
 
   // --- Calendar Grid ---
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
