@@ -482,7 +482,7 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
                 ))}
                 
                 {days.map((date, idx) => {
-                    if (!date) return <div key={`pad-${idx}`} className="h-20 md:h-28 rounded-xl bg-transparent" />;
+                    if (!date) return <div key={`pad-${idx}`} className="h-14 md:h-24 rounded-xl bg-transparent" />;
                     
                     const dateStr = toLocalDateStr(date);
                     const isToday = dateStr === todayStr;
@@ -495,7 +495,7 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
                             key={dateStr}
                             onClick={() => !isFuture && openLogModal(dateStr)}
                             className={`
-                                relative h-20 md:h-28 rounded-xl p-2 border transition-all flex flex-col justify-between group
+                                relative h-14 md:h-24 rounded-xl p-2 border transition-all flex flex-col justify-between group
                                 ${phaseConfig.style}
                                 ${isFuture ? 'cursor-not-allowed border-dashed opacity-50' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'}
                                 ${isToday ? 'ring-2 ring-notion-text ring-offset-2' : ''}
@@ -514,13 +514,8 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
                                 )}
                             </div>
                             
+                            {/* Content removed to reduce clutter and height */}
                             <div className="space-y-1">
-                                {phaseConfig.label && !isFuture && (
-                                    <div className="text-[10px] font-medium opacity-80 truncate px-1">
-                                        {phaseConfig.label}
-                                    </div>
-                                )}
-                                
                                 <div className="flex flex-wrap gap-1 justify-end">
                                     {log?.symptoms && log.symptoms.length > 0 && (
                                         <span className="w-1.5 h-1.5 rounded-full bg-orange-400" title="症状"/>
@@ -593,14 +588,15 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
 
                               <div>
                                   <span className="text-xs text-notion-dim mb-2 block">流量强度</span>
-                                  <div className="flex gap-2">
-                                      {[1, 2, 3, 4, 5].map(lvl => (
+                                  <div className="flex gap-4 justify-around bg-white dark:bg-notion-bg p-3 rounded-xl border border-notion-border">
+                                      {[1, 2, 3, 4, 5].map((level) => (
                                           <button
-                                            key={lvl}
-                                            onClick={() => setEditingLog({...editingLog, flowLevel: editingLog.flowLevel === lvl ? 0 : lvl})}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${editingLog.flowLevel === lvl ? 'bg-red-400 text-white shadow-md' : 'bg-white dark:bg-notion-bg border border-notion-border text-notion-dim hover:border-red-200'}`}
+                                            key={level}
+                                            onClick={() => setEditingLog({...editingLog, flowLevel: editingLog.flowLevel === level ? 0 : level})}
+                                            className={`flex flex-col items-center gap-1 transition-all ${editingLog.flowLevel && editingLog.flowLevel >= level ? 'text-red-500 scale-110' : 'text-notion-dim hover:text-red-300'}`}
+                                            title={`强度 ${level}`}
                                           >
-                                              {lvl}
+                                              <Droplets size={16 + level * 2} className={editingLog.flowLevel && editingLog.flowLevel >= level ? 'fill-current' : ''} />
                                           </button>
                                       ))}
                                   </div>
@@ -626,13 +622,16 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
                                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-notion-dim pointer-events-none"/>
                               </div>
                               
-                              {/* Energy */}
-                              <div className="flex items-center gap-2 bg-notion-sidebar rounded-xl px-3 border border-notion-border">
-                                  <Zap size={14} className="text-yellow-500"/>
+                              {/* Energy - Slider */}
+                              <div className="p-3 bg-notion-sidebar rounded-xl border border-notion-border flex flex-col justify-center space-y-2">
+                                  <div className="flex justify-between items-center text-xs font-bold text-notion-dim uppercase">
+                                      <span className="flex items-center gap-1 text-yellow-600"><Zap size={12} className="fill-current"/> 能量</span>
+                                      <span className="text-notion-text">{editingLog.energy ?? 5}</span>
+                                  </div>
                                   <input 
-                                    type="number" min="0" max="10" placeholder="能量 (0-10)"
-                                    className="w-full bg-transparent border-none outline-none text-sm py-3"
-                                    value={editingLog.energy || ''}
+                                    type="range" min="0" max="10"
+                                    className="w-full h-1.5 bg-notion-border rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                                    value={editingLog.energy ?? 5}
                                     onChange={e => setEditingLog({...editingLog, energy: parseInt(e.target.value)})}
                                   />
                               </div>
