@@ -247,9 +247,6 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
       return { style: PHASE_STYLES['default'], opacityClass: 'opacity-100', phaseDay: null };
   };
 
-  // Wrapper for Calendar Grid
-  const getPhaseConfig = (dateStr: string) => calculatePhase(dateStr);
-
   const changeMonth = (offset: number) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
   };
@@ -311,7 +308,6 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
   const displayDayInfo = null;
   
   // Detect Stale AI Advice
-  // If the calculated phase (displayPhaseLabel) differs from the AI's stored phase, the advice is likely for the wrong phase.
   const isAdviceStale = state.analysis.currentPhase && 
                         displayPhaseLabel && 
                         state.analysis.currentPhase !== displayPhaseLabel && 
@@ -480,4 +476,250 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-7 gap-2 mb-
+            <div className="grid grid-cols-7 gap-2 mb-2">
+                {['日', '一', '二', '三', '四', '五', '六'].map(d => (
+                    <div key={d} className="text-center text-xs font-bold text-notion-dim mb-2 uppercase tracking-wider">{d}</div>
+                ))}
+                
+                {days.map((date, idx) => {
+                    if (!date) return <div key={`pad-${idx}`} className="h-20 md:h-28 rounded-xl bg-transparent" />;
+                    
+                    const dateStr = toLocalDateStr(date);
+                    const isToday = dateStr === todayStr;
+                    const log = logMap[dateStr];
+                    const phaseConfig = calculatePhase(dateStr);
+                    const isFuture = new Date(dateStr) > new Date(todayStr);
+
+                    return (
+                        <div 
+                            key={dateStr}
+                            onClick={() => !isFuture && openLogModal(dateStr)}
+                            className={`
+                                relative h-20 md:h-28 rounded-xl p-2 border transition-all flex flex-col justify-between group
+                                ${phaseConfig.style}
+                                ${isFuture ? 'cursor-not-allowed border-dashed opacity-50' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'}
+                                ${isToday ? 'ring-2 ring-notion-text ring-offset-2' : ''}
+                                ${log ? 'shadow-sm' : ''}
+                                ${phaseConfig.opacityClass}
+                            `}
+                        >
+                            <div className="flex justify-between items-start">
+                                <span className={`text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-notion-text text-notion-bg' : ''}`}>
+                                    {date.getDate()}
+                                </span>
+                                {log?.isPeriodStart && (
+                                    <div className="p-1 bg-white/30 rounded-full" title="经期开始">
+                                        <Droplets size={12} className="text-red-700 fill-current"/>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="space-y-1">
+                                {phaseConfig.label && !isFuture && (
+                                    <div className="text-[10px] font-medium opacity-80 truncate px-1">
+                                        {phaseConfig.label}
+                                    </div>
+                                )}
+                                
+                                <div className="flex flex-wrap gap-1 justify-end">
+                                    {log?.symptoms && log.symptoms.length > 0 && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400" title="症状"/>
+                                    )}
+                                    {log?.sexualActivity && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-pink-500" title="同房"/>
+                                    )}
+                                    {log?.note && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-notion-text" title="笔记"/>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            
+            <div className="flex gap-4 items-center justify-center mt-6 text-[10px] text-notion-dim">
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-[#EBCBCB] border border-[#D6B5B5]"></div> 月经期</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-[#F0E5D0] border border-[#E0D4BC]"></div> {state.mode === 'ttc' ? '易孕/排卵' : '高能期'}</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-[#D8E6E2] border border-[#BCCFC9]"></div> {state.mode === 'ttc' ? '平稳期' : '复苏期'}</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-[#E2E2E6] border border-[#CFCDD6]"></div> {state.mode === 'ttc' ? '等待期' : '守护期'}</div>
+            </div>
+        </div>
+      </div>
+
+      {/* --- Log Modal --- */}
+      {editingLog && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-notion-text/20 backdrop-blur-sm p-4">
+              <div className="bg-white/95 dark:bg-notion-bg w-full max-w-lg rounded-3xl shadow-2xl border border-white/20 flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                  <div className="p-5 border-b border-notion-border flex justify-between items-center bg-white/50 dark:bg-notion-sidebar">
+                      <h3 className="text-lg font-bold text-notion-text flex items-center gap-2">
+                          {editingLog.date} 记录
+                          {state.logs.find(l => l.date === editingLog.date) && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">已记录</span>}
+                      </h3>
+                      <button onClick={() => setEditingLog(null)} className="p-2 hover:bg-notion-hover rounded-full transition-colors"><X size={20}/></button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      
+                      {/* Section 1: Period */}
+                      <section className="space-y-3">
+                          <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-2"><Droplets size={14}/> 经期状况</label>
+                          <div className="p-4 bg-notion-sidebar rounded-xl border border-notion-border space-y-4">
+                              <label className="flex items-center justify-between cursor-pointer group">
+                                  <span className="font-medium text-notion-text group-hover:text-notion-accentText transition-colors">大姨妈来了 (第一天)</span>
+                                  <input 
+                                    type="checkbox" 
+                                    className="w-5 h-5 rounded border-notion-border text-notion-accentText focus:ring-notion-accentText"
+                                    checked={editingLog.isPeriodStart || false}
+                                    onChange={e => setEditingLog({...editingLog, isPeriodStart: e.target.checked})}
+                                  />
+                              </label>
+                              
+                              {editingLog.isPeriodStart && (
+                                   <div className="pt-3 border-t border-notion-border/50 animate-in slide-in-from-top-2">
+                                       <span className="text-xs text-notion-dim mb-2 block">预计持续天数</span>
+                                       <div className="flex items-center gap-3">
+                                           <input 
+                                              type="range" 
+                                              min="3" max="10" 
+                                              value={editingLog.duration || 5}
+                                              onChange={e => setEditingLog({...editingLog, duration: parseInt(e.target.value)})}
+                                              className="flex-1 h-2 bg-notion-border rounded-lg appearance-none cursor-pointer accent-notion-accentText"
+                                           />
+                                           <span className="font-bold text-notion-text w-8 text-center">{editingLog.duration || 5}</span>
+                                       </div>
+                                   </div>
+                              )}
+
+                              <div>
+                                  <span className="text-xs text-notion-dim mb-2 block">流量强度</span>
+                                  <div className="flex gap-2">
+                                      {[1, 2, 3, 4, 5].map(lvl => (
+                                          <button
+                                            key={lvl}
+                                            onClick={() => setEditingLog({...editingLog, flowLevel: editingLog.flowLevel === lvl ? 0 : lvl})}
+                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${editingLog.flowLevel === lvl ? 'bg-red-400 text-white shadow-md' : 'bg-white dark:bg-notion-bg border border-notion-border text-notion-dim hover:border-red-200'}`}
+                                          >
+                                              {lvl}
+                                          </button>
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      </section>
+
+                      {/* Section 2: Body & Mind */}
+                      <section className="space-y-3">
+                          <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-2"><Smile size={14}/> 身心状态</label>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                              {/* Mood */}
+                              <div className="relative">
+                                  <select 
+                                    className="w-full p-3 rounded-xl bg-notion-sidebar border border-notion-border text-sm appearance-none outline-none focus:ring-2 focus:ring-notion-accentText/20"
+                                    value={editingLog.mood || ''}
+                                    onChange={e => setEditingLog({...editingLog, mood: e.target.value})}
+                                  >
+                                      <option value="">选择心情...</option>
+                                      {MOOD_LIST.map(m => <option key={m} value={m}>{m}</option>)}
+                                  </select>
+                                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-notion-dim pointer-events-none"/>
+                              </div>
+                              
+                              {/* Energy */}
+                              <div className="flex items-center gap-2 bg-notion-sidebar rounded-xl px-3 border border-notion-border">
+                                  <Zap size={14} className="text-yellow-500"/>
+                                  <input 
+                                    type="number" min="0" max="10" placeholder="能量 (0-10)"
+                                    className="w-full bg-transparent border-none outline-none text-sm py-3"
+                                    value={editingLog.energy || ''}
+                                    onChange={e => setEditingLog({...editingLog, energy: parseInt(e.target.value)})}
+                                  />
+                              </div>
+                          </div>
+
+                          {/* Symptoms Tags */}
+                          <div className="flex flex-wrap gap-2">
+                              {SYMPTOMS_LIST.map(sym => {
+                                  const isActive = editingLog.symptoms?.includes(sym);
+                                  return (
+                                      <button
+                                        key={sym}
+                                        onClick={() => {
+                                            const current = editingLog.symptoms || [];
+                                            const newSyms = isActive ? current.filter(s => s !== sym) : [...current, sym];
+                                            setEditingLog({...editingLog, symptoms: newSyms});
+                                        }}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${isActive ? 'bg-notion-text text-white border-notion-text' : 'bg-white dark:bg-notion-sidebar border-notion-border text-notion-dim hover:border-notion-text'}`}
+                                      >
+                                          {sym}
+                                      </button>
+                                  );
+                              })}
+                          </div>
+                      </section>
+
+                      {/* Section 3: Intimacy & Health */}
+                      <section className="space-y-3">
+                           <label className="text-xs font-bold text-notion-dim uppercase flex items-center gap-2"><Heart size={14}/> 亲密与健康</label>
+                           <div className="p-4 bg-notion-sidebar rounded-xl border border-notion-border space-y-4">
+                                <div className="flex items-center gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 rounded text-pink-500 focus:ring-pink-500 border-gray-300"
+                                            checked={!!editingLog.sexualActivity}
+                                            onChange={e => {
+                                                if (e.target.checked) {
+                                                    setEditingLog({...editingLog, sexualActivity: { times: 1, protection: '无措施' }});
+                                                } else {
+                                                    setEditingLog({...editingLog, sexualActivity: undefined});
+                                                }
+                                            }}
+                                        />
+                                        <span className="text-sm font-medium text-notion-text">同房</span>
+                                    </label>
+                                    
+                                    {editingLog.sexualActivity && (
+                                        <select 
+                                            className="flex-1 p-2 rounded-lg bg-white dark:bg-notion-bg border border-notion-border text-xs outline-none"
+                                            value={editingLog.sexualActivity.protection}
+                                            onChange={e => setEditingLog({
+                                                ...editingLog, 
+                                                sexualActivity: { ...editingLog.sexualActivity!, protection: e.target.value }
+                                            })}
+                                        >
+                                            {PROTECTION_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                    )}
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-1 flex items-center gap-2 bg-white dark:bg-notion-bg px-3 py-2 rounded-lg border border-notion-border">
+                                        <Thermometer size={14} className="text-notion-dim"/>
+                                        <input 
+                                            type="number" step="0.1" placeholder="体温 ℃"
+                                            className="w-full bg-transparent border-none outline-none text-xs"
+                                            value={editingLog.weight || ''} // Using weight field for temperature temporarily or add temp field later, here reusing valid field from types
+                                            onChange={e => setEditingLog({...editingLog, weight: parseFloat(e.target.value)})}
+                                        />
+                                    </div>
+                                </div>
+                           </div>
+                      </section>
+                  </div>
+
+                  <div className="p-5 border-t border-notion-border bg-white/50 dark:bg-notion-sidebar flex justify-end">
+                      <button 
+                        onClick={saveLog}
+                        className="px-8 py-3 bg-notion-text text-white dark:text-black rounded-xl font-bold hover:opacity-90 shadow-lg transition-opacity"
+                      >
+                          保存记录
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+    </div>
+  );
+};
