@@ -287,13 +287,19 @@ export const HealthBoard: React.FC<HealthBoardProps> = ({ state, onUpdateLog, on
   const todayCalculated = calculatePhase(todayStr);
   const isTodayLogged = logMap[todayStr]?.isPeriodStart || logMap[todayStr]?.flow;
   
-  // MODIFIED: Prioritize AI Analysis Phase if available
-  let displayPhaseLabel = state.analysis.currentPhase;
+  // FIX: Prioritize Calendar Calculation over AI Stale Data to ensure consistency
+  let displayPhaseLabel = todayCalculated.label;
   
   if (state.mode === 'pregnancy') {
       displayPhaseLabel = '孕期';
-  } else if (!displayPhaseLabel || displayPhaseLabel === '需分析') {
-      displayPhaseLabel = todayCalculated.label || "等待分析";
+  } else if (!displayPhaseLabel) {
+       // Only fallback to AI analysis if local calc failed (rare)
+      if (state.analysis.currentPhase && state.analysis.currentPhase !== '需分析') {
+         displayPhaseLabel = state.analysis.currentPhase;
+      } else {
+         displayPhaseLabel = "等待分析";
+      }
+
       // Fallback for gaps
       if (displayPhaseLabel === '等待分析' && !isTodayLogged && !todayCalculated.label && !todayCalculated.isPredicted) {
           displayPhaseLabel = state.mode === 'ttc' ? '等待期' : '守护期';
